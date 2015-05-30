@@ -13444,6 +13444,8 @@ let
 
           ktorrent = callPackage ../applications/networking/p2p/ktorrent { };
 
+          ktikz = callPackage ../applications/graphics/ktikz { };
+
           kuickshow = callPackage ../applications/graphics/kuickshow { };
 
           libalkimia = callPackage ../development/libraries/libalkimia { };
