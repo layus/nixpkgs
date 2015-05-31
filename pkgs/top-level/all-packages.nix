@@ -2600,6 +2600,12 @@ let
 
   qshowdiff = callPackage ../tools/text/qshowdiff { };
 
+  qtikz = callPackage ../applications/graphics/ktikz {
+    withKDE = false;
+    kdelibs = null;
+    qt = qt4;
+  };
+
   quilt = callPackage ../development/tools/quilt { };
 
   radvd = callPackage ../tools/networking/radvd { };
