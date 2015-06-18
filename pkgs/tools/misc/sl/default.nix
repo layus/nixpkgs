@@ -15,8 +15,8 @@ stdenv.mkDerivation {
   buildInputs = [ ncurses ];
 
   installPhase = ''
-    mkdir -p $out/bin
-    cp sl $out/bin
+    install sl   -D $out/bin/sl
+    install sl.1 -D $out/share/man/man1/sl.1
   '';
 
   meta = {
