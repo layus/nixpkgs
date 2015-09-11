@@ -7088,12 +7088,7 @@ let
     };
   };
 
-  inginious = buildPythonPackage rec {
-    version = "0.3.dev1";
-    name = "inginious-${version}";
-
-    disabled = isPy3k;
-
+  inginious = let
     # patched version of docker bindings.
     docker-custom = self.docker.override {
       name = "docker-1.3.0-dirty";
@@ -7105,16 +7100,41 @@ let
       };
     };
 
+    webpy-custom = self.web.override {
+      name = "web.py-INGI";
+      src = pkgs.fetchFromGitHub {
+        owner = "UCL-INGI";
+        repo = "webpy-INGI";
+        rev = "ingi";
+        sha256 = "159vwmb8554xk98rw380p3ah170r6gm861r1nqf2l452vvdfxscd";
+      };
+    };
+   in buildPythonPackage rec {
+    version = "0.3a1.dev0";
+    name = "inginious-${version}";
+
+    disabled = isPy3k;
+
     propagatedBuildInputs = with self; [
-      requests2 # Needs to be first;
-      cgroup-utils docker-custom docutils lti multiprocessing pygments pymongo
-      pyyaml rpyc selenium sh simpleldap tidylib virtual-display web
-      websocket_client
+      requests2 # Needs to be first, no idea why...
+      cgroup-utils docker-custom docutils lti mock multiprocessing pygments
+      pymongo pyyaml rpyc sh simpleldap sphinx_rtd_theme tidylib
+      websocket_client watchdog webpy-custom
     ];
 
+    buildInputs = with self; [ nose selenium virtual-display ];
+
+    /* Hydra fix exists onlyon github for now.
     src = pkgs.fetchurl {
       url = "https://pypi.python.org/packages/source/I/INGInious/INGInious-${version}.tar.gz";
       md5 = "40474dd6b6d4fc26e47a1d9c77bcf943";
+    };
+    */
+    src = pkgs.fetchFromGitHub {
+      owner = "UCL-INGI";
+      repo = "INGInious";
+      rev = "44ce3fc337e186793aba0edbec27d0d085c4d8b1";
+      sha256 = "0vc54zvbjn0bbvhnl8is4wvqi2qdzcvrbzrfszq8d58a75pf2v4g";
     };
 
     meta = {
