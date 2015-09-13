@@ -7119,7 +7119,7 @@ let
       requests2 # Needs to be first, no idea why...
       cgroup-utils docker-custom docutils lti mock multiprocessing pygments
       pymongo pyyaml rpyc sh simpleldap sphinx_rtd_theme tidylib
-      websocket_client watchdog webpy-custom
+      websocket_client watchdog webpy-custom flup
     ];
 
     buildInputs = with self; [ nose selenium virtual-display ];

@@ -1,0 +1,169 @@
+{ config, lib, pkgs, ... }:
+with lib;
+let
+  cfg = config.services.lighttpd.inginious;
+  inginious = pkgs.pythonPackages.inginious;
+  execName = "inginious-${if cfg.useLTI then "lti" else "webapp"}";
+
+  inginiousConfigFile = if cfg.configFile != null then cfg.configFile else pkgs.writeText "inginious.yaml" ''
+    # Backend; can be:
+    # - "local" (run containers on the same machine)
+    # - "remote" (connect to distant docker daemon and auto start agents) (choose this if you use boot2docker)
+    # - "remote_manual" (connect to distant and manually installed agents)
+    backend: "${"local"}"
+
+    # List of remote docker daemon to which the backend will try
+    # to connect (backend: remote only) (the default config below is the one for boot2docker on OS X)
+    docker_daemons:
+      - # Host of the docker daemon *from the webapp*
+        remote_host: "${"localhost"}" 
+        # Port of the distant docker daemon *from the webapp*
+        remote_docker_port: "${"2375"}"
+        # A mandatory port used by the backend and the agent that will be automatically started.
+        # Needs to be available on the remote host, and to be open in the firewall.
+        remote_agent_port: "${"63456"}"
+        # Does the remote docker requires tls? Defaults to false.
+        # Parameter can be set to true or path to the certificates
+        #use_tls: false
+        # Link to the docker daemon *from the host that runs the docker daemon*. Defaults to:
+        #local_location: "unix:///var/run/docker.sock"
+        # Path to the cgroups "mount" *from the host that runs the docker daemon*. Defaults to:
+        #cgroups_location: "/sys/fs/cgroup"
+        # Name that will be used to reference the agent
+        #"agent_name": "inginious-agent"
+
+    # List of remote agents to which the backend will try
+    # to connect (backend: remote_manual only) (the default config below is the one for boot2docker on OS X)
+    #agents:
+    #  - host: "192.168.59.103"
+    #    port: 5001
+
+    # MongoDB options
+    mongo_opt:
+        host: localhost
+        database: INGInious
+
+    # Location of the task directory
+    tasks_directory: "${cfg.tasksDirectory}"
+
+    # Aliases for containers
+    # Only containers listed here can be used by tasks
+    containers:
+        default: ingi/inginious-c-default
+        sekexe:  ingi/inginious-c-sekexe
+        java:    ingi/inginious-c-java
+        oz:      ingi/inginious-c-oz
+
+    # Plugins that will be loaded by the webapp
+    plugins:
+      - plugin_module: inginious.frontend.webapp.plugins.auth.demo_auth
+        users:
+            # register the user "test" with the password "test"
+            test: test
+
+    # Super admins: list of user names that can do everything in the backend
+    superadmins:
+    ${lib.concatMapStrings (x: "  - \"${x}\"\n") cfg.superadmins}
+
+    # Disable INGInious?
+    maintenance: false
+
+    # Use single minified javascript file (production) or multiple files (dev) ?
+    use_minified_js: true
+
+    #smtp:
+    #    sendername: 'INGInious <no-reply@inginious.org>'
+    #    host: 'smtp.gmail.com'
+    #    port: 587
+    #    username: 'configme@gmail.com'
+    #    password: 'secret'
+    #    starttls: True
+
+    ${cfg.extraConfig}
+  '';
+in
+{
+  options.services.lighttpd.inginious = {
+    enable = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to enable INGInious, an automated code testing and grading system.
+      '';
+    };
+
+    configFile = mkOption {
+      #type = types.path;
+      default = null;
+      example = literalExample ''pkgs.writeText "httpd.conf" "# custom config options ...";'';
+      description = '' A path to an INGInious configuration file. '';
+    };
+
+    extraConfig = mkOption {
+      type = types.lines;
+      default = "";
+      description = '' Extra option in YaML format, to be appended to the config file. '';
+    };
+
+    tasksDirectory = mkOption {
+      type = types.path;
+      default = "/var/lib/INGInious/tasks";
+      description = '' Path to inginious tasks '';
+    };
+
+    useLTI = mkOption {
+      type = types.bool;
+      default = false;
+      description = '' Whether to use the LTI frontend in place of the webapp. '';
+    };
+
+    superadmins = mkOption {
+      type = types.uniq (types.listOf types.str);
+      default = [ "admin" ];
+      example = ''[ "john" "pepe" "emilia" ]'';
+      description = ''List of user logins allowed to administrate the whole server.'';
+    };
+  };
+
+  config = mkIf cfg.enable {
+
+    virtualisation.docker = {
+      enable = true;
+      extraOptions = "-H tcp://localhost:2375 -H unix:///var/run/docker.sock";
+      storageDriver = "overlay";
+    };
+
+    services.mongodb.enable = true;
+
+    services.lighttpd.enable = true;
+
+    users.extraUsers."lighttpd".extraGroups = [ "docker" "mongodb" ];
+    # declare module dependencies
+    services.lighttpd.enableModules = [ "mod_access" "mod_alias" "mod_fastcgi" "mod_redirect" "mod_rewrite" ];
+
+    services.lighttpd.extraConfig = ''
+        alias.url += (
+            "/static/webapp/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/webapp/static/",
+            "/static/common/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/common/static/"
+        )
+        fastcgi.server = ( "/inginious" =>
+          (( 
+            "socket" => "/tmp/fastcgi.socket",
+            "bin-path" => "${inginious}/bin/${execName} --config=${inginiousConfigFile}",
+            "max-procs" => 1,
+            "bin-environment" => (
+              ${lib.optionalString false ''"DOCKER_HOST" => "tcp://192.168.59.103:2375",'' }
+              "REAL_SCRIPT_NAME" => ""
+            ),
+            "check-local" => "disable"
+          ))
+        )
+        url.rewrite-once = (
+          "^/(static)/(.*)" => "$0",
+          "^/(.*)$" => "/${execName}/$1",
+          "^/favicon.ico$" => "/static/common/favicon.ico",
+        )
+    '';
+
+  };
+}
