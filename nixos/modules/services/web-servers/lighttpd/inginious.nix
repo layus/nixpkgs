@@ -1,5 +1,6 @@
 { config, lib, pkgs, ... }:
 with lib;
+
 let
   cfg = config.services.lighttpd.inginious;
   inginious = pkgs.pythonPackages.inginious;
@@ -10,7 +11,7 @@ let
     # - "local" (run containers on the same machine)
     # - "remote" (connect to distant docker daemon and auto start agents) (choose this if you use boot2docker)
     # - "remote_manual" (connect to distant and manually installed agents)
-    backend: "${"local"}"
+    backend: "${if cfg.local "local" else "remote_manual"}"
 
     # List of remote docker daemon to which the backend will try
     # to connect (backend: remote only) (the default config below is the one for boot2docker on OS X)
@@ -37,14 +38,31 @@ let
     #agents:
     #  - host: "192.168.59.103"
     #    port: 5001
+    ${assert cfg.local or cfg.remoteAgents != null;
+    lib.optionalString !cfg.local ''
+      agents:
+      ${lib.concatMapStrings (agent: ''
+        ${}  - host: "${agent.host}"
+        ${}    port: ${agent.port}
+      '') cfg.remoteAgents}
+    ''}
+
+    # Location of the task directory
+    tasks_directory: "${cfg.tasksDirectory}"
+
+    # Super admins: list of user names that can do everything in the backend
+    superadmins:
+    ${lib.concatMapStrings (x: "  - \"${x}\"\n") cfg.superadmins}
+
+    # Use single minified javascript file (production) or multiple files (dev) ?
+    use_minified_js: true
+
+    ## TODO: Add NixOS options for these required parameters.
 
     # MongoDB options
     mongo_opt:
         host: localhost
         database: INGInious
-
-    # Location of the task directory
-    tasks_directory: "${cfg.tasksDirectory}"
 
     # Aliases for containers
     # Only containers listed here can be used by tasks
@@ -61,15 +79,8 @@ let
             # register the user "test" with the password "test"
             test: test
 
-    # Super admins: list of user names that can do everything in the backend
-    superadmins:
-    ${lib.concatMapStrings (x: "  - \"${x}\"\n") cfg.superadmins}
-
     # Disable INGInious?
-    maintenance: false
-
-    # Use single minified javascript file (production) or multiple files (dev) ?
-    use_minified_js: true
+    #maintenance: false
 
     #smtp:
     #    sendername: 'INGInious <no-reply@inginious.org>'
@@ -123,47 +134,79 @@ in
       example = ''[ "john" "pepe" "emilia" ]'';
       description = ''List of user logins allowed to administrate the whole server.'';
     };
-  };
 
-  config = mkIf cfg.enable {
-
-    virtualisation.docker = {
-      enable = true;
-      extraOptions = "-H tcp://localhost:2375 -H unix:///var/run/docker.sock";
-      storageDriver = "overlay";
+    hostPattern = mkOption {
+      type = types.str;
+      default = "^inginious.";
+      example = "^inginious.mydomain.xyz$";
+      description = ''
+        The domain that serves INGInious.
+        INGInious uses absolute paths which makes it difficult to relocate in its own subdir.
+        The default configuration will serve INGInious when the server is accessed with a hostname starting with "inginious.".
+        If left blank, INGInious will take the precedence on all the other lighttpd submodules, which is probably not what you want.
+      '';
     };
 
-    services.mongodb.enable = true;
+    local = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Set to false if you want to use remote graging agents.
+        Remember to provide a list of agents in that case.
+      '';
+    };
 
-    services.lighttpd.enable = true;
-
-    users.extraUsers."lighttpd".extraGroups = [ "docker" "mongodb" ];
-    # declare module dependencies
-    services.lighttpd.enableModules = [ "mod_access" "mod_alias" "mod_fastcgi" "mod_redirect" "mod_rewrite" ];
-
-    services.lighttpd.extraConfig = ''
-        alias.url += (
-            "/static/webapp/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/webapp/static/",
-            "/static/common/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/common/static/"
-        )
-        fastcgi.server = ( "/inginious" =>
-          (( 
-            "socket" => "/tmp/fastcgi.socket",
-            "bin-path" => "${inginious}/bin/${execName} --config=${inginiousConfigFile}",
-            "max-procs" => 1,
-            "bin-environment" => (
-              ${lib.optionalString false ''"DOCKER_HOST" => "tcp://192.168.59.103:2375",'' }
-              "REAL_SCRIPT_NAME" => ""
-            ),
-            "check-local" => "disable"
-          ))
-        )
-        url.rewrite-once = (
-          "^/(static)/(.*)" => "$0",
-          "^/(.*)$" => "/${execName}/$1",
-          "^/favicon.ico$" => "/static/common/favicon.ico",
-        )
-    '';
-
+    remoteAgents = mkOption {
+      type = types.nullOr (types.listOf (types.attrsOf types.str));
+      default = null;
+      example = [  { host = "145.33.17.89"; port = "1345"; } ];
+      description = '' A list of remote agents . '';
+    };
   };
+
+  config = mkIf cfg.enable (
+    mkMerge [
+      # For a local install, we need docker.
+      (mkIf cfg.local {
+        virtualisation.docker = {
+          enable = true;
+          extraOptions = "-H tcp://localhost:2375 -H unix:///var/run/docker.sock";
+          storageDriver = "overlay";
+        };
+
+        users.extraUsers."lighttpd".extraGroups = [ "docker" ];
+      })
+      # Common 
+      {
+        services.mongodb.enable = true;
+
+        services.lighttpd.enable = true;
+        services.lighttpd.enableModules = [ "mod_access" "mod_alias" "mod_fastcgi" "mod_redirect" "mod_rewrite" ];
+        services.lighttpd.extraConfig = ''
+          $HTTP["host"] =~ "${hostPattern}" {
+            fastcgi.server = ( "/inginious" =>
+              (( 
+                "socket" => "/tmp/fastcgi.socket",
+                "bin-path" => "${inginious}/bin/${execName} --config=${inginiousConfigFile}",
+                "max-procs" => 1,
+                "bin-environment" => (
+                  ${lib.optionalString false ''"DOCKER_HOST" => "tcp://192.168.59.103:2375",'' }
+                  "REAL_SCRIPT_NAME" => ""
+                  ),
+                "check-local" => "disable"
+              ))
+            )
+            url.rewrite-once = (
+              "^/static/" => "$0",
+              "^/.*$" => "/${execName}$0",
+              "^/favicon.ico$" => "/static/common/favicon.ico",
+            )
+            alias.url += (
+              "/static/webapp/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/webapp/static/",
+              "/static/common/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/common/static/"
+            )
+          }
+        '';
+      }
+    ];
 }
