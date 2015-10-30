@@ -1702,6 +1702,8 @@ let
 
   grin = callPackage ../tools/text/grin { };
 
+  grisbi = callPackage ../applications/office/grisbi { };
+
   grive = callPackage ../tools/filesystems/grive {
     json_c = json-c-0-11; # won't configure with 0.12; others are vulnerable
   };
