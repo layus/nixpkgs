@@ -39,6 +39,7 @@ stdenv.mkDerivation rec {
   '';
 
   configureFlags = [
+      "--with-ca-bundle=/etc/ssl/certs/ca-certificates.crt"
       ( if sslSupport then "--with-ssl=${openssl}" else "--without-ssl" )
       ( if scpSupport then "--with-libssh2=${libssh2}" else "--without-libssh2" )
     ]
