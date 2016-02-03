@@ -1,0 +1,13 @@
+diff --git a/lib/system.c b/lib/system.c
+index db9446e..f4fb977 100644
+--- a/lib/system.c
++++ b/lib/system.c
+@@ -407,7 +407,7 @@ add_system_trust(gnutls_x509_trust_list_t list,
+ #ifdef DEFAULT_TRUST_STORE_FILE
+ 	ret =
+ 	    gnutls_x509_trust_list_add_trust_file(list,
+-						  DEFAULT_TRUST_STORE_FILE,
++						  getenv("SSL_CERT_FILE") || DEFAULT_TRUST_STORE_FILE,
+ 						  crl_file,
+ 						  GNUTLS_X509_FMT_PEM,
+ 						  tl_flags, tl_vflags);
