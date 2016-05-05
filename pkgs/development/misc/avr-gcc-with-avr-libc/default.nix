@@ -26,8 +26,8 @@ stdenv.mkDerivation {
   
   buildInputs = [ gmp mpfr libmpc zlib ];
   
-  # Make sure we don't strip the libraries in lib/gcc/avr.
-  stripDebugList= [ "bin" "avr/bin" "libexec" ];
+  # Make sure we don't strip the libraries in lib/gcc/avr and in avr/lib.
+  dontStripList= [ "lib/gcc/avr" "avr/lib" ];
   
   installPhase = ''
     # important, without this gcc won't find the binutils executables
