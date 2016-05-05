@@ -80,6 +80,8 @@ stdenv.mkDerivation {
     cp ./misc/emacs/* $out/share/emacs/site-lisp/
   '';
 
+  dontStripList = [ "share/go/src/debug/elf/testdata" ];
+
   meta = {
     branch = "1.2";
     homepage = http://golang.org/;

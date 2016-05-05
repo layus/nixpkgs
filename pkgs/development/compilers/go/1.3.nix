@@ -102,6 +102,8 @@ stdenv.mkDerivation {
 
   setupHook = ./setup-hook.sh;
 
+  dontStripList = [ "share/go/src/debug/elf/testdata" ];
+
   meta = {
     branch = "1.3";
     homepage = http://golang.org/;

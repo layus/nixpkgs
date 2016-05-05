@@ -141,6 +141,8 @@ stdenv.mkDerivation rec {
 
   setupHook = ./setup-hook.sh;
 
+  dontStripList = [ "share/go/src/debug/elf/testdata" ];
+
   disallowedReferences = [ go_1_4 ];
 
   meta = with stdenv.lib; {
