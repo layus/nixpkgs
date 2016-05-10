@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, emacs, texLive }:
+{ stdenv, fetchurl, emacs, texlive, ghostscript }:
  
 stdenv.mkDerivation ( rec {
   pname = "auctex";
@@ -15,10 +15,14 @@ stdenv.mkDerivation ( rec {
     sha256 = "1cf9fkkmzjxa4jvk6c01zgxdikr4zzb5pcx8i4r0hwdk0xljkbwq";
   };
 
-  buildInputs = [ emacs texLive ];
+  buildInputs = [ emacs texlive.combined.scheme-basic ghostscript ];
+
+  preConfigure = ''
+    mkdir -p "$out/share/texmf"
+  '';
 
   configureFlags = [
     "--with-lispdir=\${out}/share/emacs/site-lisp"
-    "--disable-preview"
+    "--with-texmf-dir=\${out}/share/texmf"
   ];
 })
