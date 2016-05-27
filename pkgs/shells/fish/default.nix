@@ -1,7 +1,7 @@
 { stdenv, fetchurl, coreutils, utillinux,
   nettools, kbd, bc, which, gnused, gnugrep,
   groff, man-db, glibc, libiconv, pcre2,
-  gettext, ncurses, python
+  gettext, ncurses, python, vim, glibcLocales
 }:
 
 with stdenv.lib;
@@ -26,6 +26,37 @@ stdenv.mkDerivation rec {
     coreutils gnugrep gnused bc
     python which groff gettext
   ] ++ optional (!stdenv.isDarwin) man-db;
+
+  postPatch = ''
+    # /bin/{echo,ls} do not exist, but /bin/sh will
+    # These executables are tested for their executable bit, never executed
+    sed -e "s!/bin/\(echo\|ls\)!/bin/sh!" -i src/fish_tests.cpp tests/test6.in
+
+    # Really use our wicked PATH.
+    sed -i '/highlight_shell/ s/env_vars_snapshot_t(/&env_vars_snapshot_t::highlighting_keys/' src/fish_tests.cpp
+
+    sed -e 's|xxd |${vim}/bin/xxd |' -i tests/*.in
+
+    # Do not assume `-e /bin/echo`.
+    sed -e 's|/bin/echo |command echo |' -i tests/test1.in
+
+  '' + optionalString stdenv.isLinux ''
+    sed -e "s| ul| ${utillinux}/bin/ul|" \
+        -i "share/functions/__fish_print_help.fish"
+    for cur in share/functions/*.fish; do
+      sed -e "s|/usr/bin/getent|${glibc.bin}/bin/getent|" -i "$cur"
+    done
+  '';
+
+  doCheck = true;
+  TERM = "xterm";
+  TERMINFO = "${ncurses}/share/terminfo";
+  LC_ALL = "en_US.UTF-8";
+  LOCALE_ARCHIVE = stdenv.lib.optionalString stdenv.isLinux
+    "${glibcLocales}/lib/locale/locale-archive";
+  checkPhase = ''
+    make test HOME=$TMPDIR
+  '';
 
   postInstall = ''
     sed -r "s|command grep|command ${gnugrep}/bin/grep|" \
@@ -53,14 +84,6 @@ stdenv.mkDerivation rec {
            "$out/share/fish/functions/__fish_complete_subcommand_root.fish"
     sed -e "s|clear;|${ncurses.out}/bin/clear;|" \
         -i "$out/share/fish/functions/fish_default_key_bindings.fish" \
-
-  '' + optionalString stdenv.isLinux ''
-    sed -e "s| ul| ${utillinux}/bin/ul|" \
-        -i "$out/share/fish/functions/__fish_print_help.fish"
-    for cur in $out/share/fish/functions/*.fish; do
-      sed -e "s|/usr/bin/getent|${glibc.bin}/bin/getent|" \
-          -i "$cur"
-    done
 
   '' + optionalString (!stdenv.isDarwin) ''
     sed -i "s|(hostname\||(${nettools}/bin/hostname\||"           \
