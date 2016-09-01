@@ -38,7 +38,8 @@ stdenv.mkDerivation rec {
 
   # Attempt to fix this error when running "mcs --version":
   # The file /nix/store/xxx-mono-2.4.2.1/lib/mscorlib.dll is an invalid CIL image
-  dontStrip = true;
+  #dontStrip = true;
+  
 
   # Parallel building doesn't work, as shows http://hydra.nixos.org/build/2983601
   enableParallelBuilding = false;

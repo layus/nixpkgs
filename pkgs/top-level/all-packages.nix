@@ -16595,6 +16595,8 @@ in
 
   ### SCIENCE/PROGRAMMING
 
+  dafny = callPackage ../applications/science/programming/dafny {};
+
   plm = callPackage ../applications/science/programming/plm { };
 
   ### SCIENCE/LOGIC
