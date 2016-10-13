@@ -6218,12 +6218,14 @@ in modules // {
   };
 
   easy-process = buildPythonPackage rec {
-    name = "EasyProcess-0.1.9";
+    name = "EasyProcess-0.2.3";
 
     src = pkgs.fetchurl {
       url = "mirror://pypi/E/EasyProcess/${name}.tar.gz";
-      sha256 = "c9980c0b0eeab97969305d8829bed966a3e28a77284e4f45a9b38fb23ce83633";
+      sha256 = "07z6485bjxkmx26mp1p1ww19d10qavw0s006bidzailsvk543qll";
     };
+
+    doCheck = false;
 
     meta = {
       description = "Easy to use python subprocess interface";
@@ -20703,11 +20705,11 @@ in modules // {
   };
 
   pymongo = buildPythonPackage rec {
-    name = "pymongo-3.0.3";
+    name = "pymongo-3.2.2";
 
     src = pkgs.fetchurl {
       url = "mirror://pypi/p/pymongo/${name}.tar.gz";
-      sha256 = "3c6b2317f8031bc1e200fd1ea35f00a96f4569e3f3f220a5e66ab6227d96ccaf";
+      sha256 = "1dk3hj00fi030z0l8z4yfz6bapayc8f5s5lqsf1isd1vh9jq20gj";
     };
 
     doCheck = false;
@@ -23003,7 +23005,7 @@ in modules // {
     };
 
     # Judging from SyntaxError in tests
-    disabled = isPy3k;
+    #disabled = isPy3k;
 
     checkPhase = ''
       ${python.interpreter} -m unittest discover
@@ -25369,14 +25371,16 @@ in modules // {
   };
 
   virtual-display = buildPythonPackage rec {
-    name = "PyVirtualDisplay-0.1.5";
+    name = "PyVirtualDisplay-0.2.1";
 
     propagatedBuildInputs = with self; [ easy-process ];
 
     src = pkgs.fetchurl {
       url = "mirror://pypi/P/PyVirtualDisplay/${name}.tar.gz";
-      sha256 = "aa6aef08995e14c20cc670d933bfa6e70d736d0b555af309b2e989e2faa9ee53";
+      sha256 = "10lrdrfgkzmxwrwsyd5ppm0z4p59clkm2snwy19rqbwr3a2q6a01";
     };
+
+    doCheck = false;
 
     meta = {
       description = "Python wrapper for Xvfb, Xephyr and Xvnc";
@@ -26929,10 +26933,10 @@ in modules // {
   };
 
   pyzmq = buildPythonPackage rec {
-    name = "pyzmq-15.2.0";
+    name = "pyzmq-15.3.0";
     src = pkgs.fetchurl {
       url = "mirror://pypi/p/pyzmq/${name}.tar.gz";
-      sha256 = "2dafa322670a94e20283aba2a44b92134d425bd326419b68ad4db8d0831a26ec";
+      sha256 = "1x2w9lwixs4mvzzivwdbi7z16m8a5vh53pxsr58w8iff3q3qgcy4";
     };
     buildInputs = with self; [ pkgs.zeromq3 pytest tornado ];
     propagatedBuildInputs = [ self.py ];

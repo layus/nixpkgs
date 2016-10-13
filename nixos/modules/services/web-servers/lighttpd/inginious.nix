@@ -13,52 +13,13 @@ let
     # - "remote_manual" (connect to distant and manually installed agents)
     backend: "${cfg.backendType}"
 
-    ## TODO (maybe): Add an option for the "remote" backend in this NixOS module.
-    # List of remote docker daemon to which the backend will try
-    # to connect (backend: remote only)
-    #docker_daemons:
-    #  - # Host of the docker daemon *from the webapp*
-    #    remote_host: "some.remote.server"
-    #    # Port of the distant docker daemon *from the webapp*
-    #    remote_docker_port: "2375"
-    #    # A mandatory port used by the backend and the agent that will be automatically started.
-    #    # Needs to be available on the remote host, and to be open in the firewall.
-    #    remote_agent_port: "63456"
-    #    # Does the remote docker requires tls? Defaults to false.
-    #    # Parameter can be set to true or path to the certificates
-    #    #use_tls: false
-    #    # Link to the docker daemon *from the host that runs the docker daemon*. Defaults to:
-    #    #local_location: "unix:///var/run/docker.sock"
-    #    # Path to the cgroups "mount" *from the host that runs the docker daemon*. Defaults to:
-    #    #cgroups_location: "/sys/fs/cgroup"
-    #    # Name that will be used to reference the agent
-    #    #"agent_name": "inginious-agent"
-
-    # List of remote agents to which the backend will try
-    # to connect (backend: remote_manual only)
-    # Example:
-    #agents:
-    #  - host: "192.168.59.103"
-    #    port: 5001
-    agents:
-    ${lib.concatMapStrings (agent:
-      "  - host: \"${agent.host}\"\n" +
-      "    port: ${agent.port}\n"
-    ) cfg.remoteAgents}
-
-    # Location of the task directory
     tasks_directory: "${cfg.tasksDirectory}"
+    backup_directory: "/tmp/inginious_backups"
+    tmp_dir: "/tmp/agent_tmp"
 
     # Super admins: list of user names that can do everything in the backend
     superadmins:
     ${lib.concatMapStrings (x: "  - \"${x}\"\n") cfg.superadmins}
-
-    # Aliases for containers
-    # Only containers listed here can be used by tasks
-    containers:
-    ${lib.concatStrings (lib.mapAttrsToList (name: fullname:
-      "  ${name}: \"${fullname}\"\n"
-    ) cfg.containers)}
 
     # Use single minified javascript file (production) or multiple files (dev) ?
     use_minified_js: true
@@ -113,7 +74,7 @@ in
 
     tasksDirectory = mkOption {
       type = types.path;
-      default = "${inginious}/lib/python2.7/site-packages/inginious/tasks";
+      default = "${inginious}/lib/${inginious.python.libPrefix}/site-packages/inginious/tasks";
       example = "/var/lib/INGInious/tasks";
       description = ''
         Path to the tasks folder.
@@ -184,8 +145,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable (
-    mkMerge [
+  config = mkIf cfg.enable ( mkMerge [
       # For a local install, we need docker.
       (mkIf (cfg.backendType == "local") {
         virtualisation.docker = {
@@ -196,16 +156,14 @@ in
           socketActivation = false;
         };
 
-        users.extraUsers."lighttpd".extraGroups = [ "docker" ];
+        users.extraUsers.lighttpd.extraGroups = [ "docker" ];
 
         # Ensure that docker has pulled the required images.
         systemd.services.inginious-prefetch = {
-          script = let
-            images = lib.unique (
-              [ "centos" "ingi/inginious-agent" ]
-              ++ lib.mapAttrsToList (_: image: image) cfg.containers
-            );
-          in lib.concatMapStrings (image: ''
+          script = let images = lib.unique (
+            [ "centos" "ingi/inginious-agent" ]
+            ++ lib.mapAttrsToList (_: image: image) cfg.containers
+          ); in lib.concatMapStrings (image: ''
             ${pkgs.docker}/bin/docker pull ${image}
           '') images;
 
@@ -231,9 +189,14 @@ in
             fastcgi.server = ( "/${execName}" =>
               ((
                 "socket" => "/run/lighttpd/inginious-fastcgi.socket",
-                "bin-path" => "${inginious}/bin/${execName} --config=${inginiousConfigFile}",
+                "bin-path" => "${inginious}/bin/${execName}",
                 "max-procs" => 1,
-                "bin-environment" => ( "REAL_SCRIPT_NAME" => "" ),
+                "bin-environment" => (
+                  "INGINIOUS_WEBAPP_HOST" => "0.0.0.0",
+                  "INGINIOUS_WEBAPP_PORT" => "80",
+                  "INGINIOUS_WEBAPP_CONFIG" => "${inginiousConfigFile}",
+                  "REAL_SCRIPT_NAME" => "",
+                ),
                 "check-local" => "disable"
               ))
             )
@@ -244,8 +207,8 @@ in
               "^/favicon.ico$" => "/static/common/favicon.ico",
             )
             alias.url += (
-              "/static/webapp/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/webapp/static/",
-              "/static/common/" => "${inginious}/lib/python2.7/site-packages/inginious/frontend/common/static/"
+              "/static/webapp/" => "${inginious}/lib/python3.5/site-packages/inginious/frontend/webapp/static/",
+              "/static/common/" => "${inginious}/lib/python3.5/site-packages/inginious/frontend/common/static/"
             )
           }
         '';

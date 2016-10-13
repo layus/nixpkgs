@@ -13191,7 +13191,7 @@ in
 
   inferno = callPackage_i686 ../applications/inferno { };
 
-  inginious = callPackage ../servers/inginious {};
+  inginious = callPackage ../servers/inginious { pythonPackages = python3Packages; };
 
   inkscape = callPackage ../applications/graphics/inkscape {
     lcms = lcms2;
