@@ -1,0 +1,12 @@
+diff --git a/dependencies/NuSMV/Makefile b/dependencies/NuSMV/Makefile
+index b5b5c2d..839394e 100644
+--- a/dependencies/NuSMV/Makefile
++++ b/dependencies/NuSMV/Makefile
+@@ -36,6 +36,7 @@ nusmv.unpacked:
+ nusmv.patched: nusmv.unpacked
+ 	patch -p0 -N < pynusmv.patch
+ 	patch -p0 -N < cudd.patch
++	sed -e 's/union wait/int/g' -i NuSMV-2.5.4/cudd-2.4.1.1/util/pipefork.c
+ 	touch nusmv.patched
+ 
+ # This target configures nusmv for proper compilation on your system

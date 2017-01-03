@@ -8673,15 +8673,15 @@ in {
   };
 
   plotly = self.buildPythonPackage rec {
-    name = "plotly-1.9.5";
-    disabled = isPy3k;
+    name = "plotly-1.12.12";
 
     src = pkgs.fetchurl {
       url = "mirror://pypi/p/plotly/${name}.tar.gz";
-      sha256 = "628679e880caab22e2a46273e85e1d1ce1382b631e1c7bbfe539f804c5269b21";
+      sha256 = "12zz00m5kb49xh0id4h6hppcd01m1za7nxi9mv19ay3m8qxb9n5d";
     };
 
-    propagatedBuildInputs = with self; [ self.pytz self.six self.requests ];
+    propagatedBuildInputs = with self; [ pytz six requests2];
+    checkInputs = with self; [ notebook ];
 
     meta = {
       description = "Python plotting library for collaborative, interactive, publication-quality graphs";
@@ -20281,6 +20281,8 @@ in {
         description = "A bug and style checker for Python";
     };
   };
+
+  pynusmv = callPackage ../development/python-modules/pynusmv { };
 
   pyopencl = callPackage ../development/python-modules/pyopencl { };
 
