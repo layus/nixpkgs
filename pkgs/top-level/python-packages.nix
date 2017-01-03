@@ -20282,6 +20282,8 @@ in {
     };
   };
 
+  pynusmv = callPackage ../development/python-modules/pynusmv { };
+
   pyopencl = callPackage ../development/python-modules/pyopencl { };
 
   pyrr = buildPythonPackage rec {
