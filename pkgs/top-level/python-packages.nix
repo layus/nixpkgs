@@ -13715,11 +13715,12 @@ in {
 
   legitfs = buildPythonPackage rec {
     name = "legitfs-${version}";
-    version = "0.4.0";
+    version = "0.3";
 
     src = pkgs.fetchurl {
       url = "mirror://pypi/l/legitfs/${name}.tar.gz";
-      sha256 = "02772h17icgnd8sdi4minpwv1wgr2zzy6pns34083z90k78b28im";
+      sha256 = "11qcrp6qjrd2s3r8wzabd47gv1y3yiwcb811l42df805n2513qkk";
+      #sha256 = "02772h17icgnd8sdi4minpwv1wgr2zzy6pns34083z90k78b28im";
     };
 
     propagatedBuildInputs = with self; [ dulwich fusepy click Logbook ];
@@ -15293,6 +15294,7 @@ in {
       sha256 = "00ck696rddjnrwfnh1zw87b9xzqfm6sqjy6kqf6kmn1xwsi6f19a";
     };
 
+    doCheck = false;
     buildInputs = with self; [ doctest-ignore-unicode mock nose ];
     propagatedBuildInputs = [ pkgs.graphviz pkgs.pkgconfig ];
 
