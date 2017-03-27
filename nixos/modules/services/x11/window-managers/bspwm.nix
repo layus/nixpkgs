@@ -56,8 +56,10 @@ in
   config = mkIf cfg.enable {
     services.xserver.windowManager.session = singleton {
       name  = "bspwm";
-      start = ''
+      environment = ''
         export _JAVA_AWT_WM_NONREPARENTING=1
+      '';
+      start = ''
         SXHKD_SHELL=/bin/sh ${cfg.sxhkd.package}/bin/sxhkd ${optionalString (cfg.sxhkd.configFile != null) "-c \"${cfg.sxhkd.configFile}\""} &
         ${cfg.package}/bin/bspwm ${optionalString (cfg.configFile != null) "-c \"${cfg.configFile}\""}
         waitPID=$!
