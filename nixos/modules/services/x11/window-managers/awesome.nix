@@ -48,8 +48,11 @@ in
 
     services.xserver.windowManager.session = singleton
       { name = "awesome";
-        start =
-          ''
+        environment = ''
+            export LUA_CPATH="${lib.concatStringsSep ";" (map getLuaCPath cfg.luaModules)}"
+            export LUA_PATH="${lib.concatStringsSep ";" (map getLuaPath cfg.luaModules)}"
+          '';
+        start = ''
             ${awesome}/bin/awesome ${makeSearchPath cfg.luaModules} &
             waitPID=$!
           '';

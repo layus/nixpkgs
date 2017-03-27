@@ -27,6 +27,8 @@ let
     Xft.hintstyle: hintslight
   '';
 
+  reindent = text: builtins.replaceStrings ["\n"] ["\n  "] text;
+
   # file provided by services.xserver.displayManager.session.script
   xsession = wm: dm: pkgs.writeScript "xsession"
     ''
@@ -146,23 +148,39 @@ let
       desktopManager="''${sessionType%%+*}"
       : ''${desktopManager:=${cfg.desktopManager.default}}
 
+      # Setup the environment
+      ${flip concatMapStrings wm (s: optionalString (s ? environment)
+        ''
+          if [ "$windowManager" == "${s.name}" ]
+          then
+            ${reindent s.environment}
+          fi
+        '')}
+      ${flip concatMapStrings dm (s: optionalString (s ? environment)
+        ''
+          if [ "$desktopManager" == "${s.name}" ]
+          then
+            ${reindent s.environment}
+          fi
+        '')}
+
       # Start the window manager.
       case "$windowManager" in
-        ${concatMapStrings (s: ''
+        ${reindent (concatMapStrings (s: ''
           (${s.name})
-            ${s.start}
+            ${reindent s.start}
             ;;
-        '') wm}
+        '') wm)}
         (*) echo "$0: Window manager '$windowManager' not found.";;
       esac
 
       # Start the desktop manager.
       case "$desktopManager" in
-        ${concatMapStrings (s: ''
+        ${reindent (concatMapStrings (s: ''
           (${s.name})
-            ${s.start}
+            ${reindent s.start}
             ;;
-        '') dm}
+        '') dm)}
         (*) echo "$0: Desktop manager '$desktopManager' not found.";;
       esac
 

@@ -61,19 +61,21 @@ in
     services.xserver.desktopManager.session = singleton
       { name = "xfce";
         bgSupport = true;
-        start =
-          ''
-            ${cfg.extraSessionCommands}
+        environment = ''
+          # Set GTK_PATH so that GTK+ can find the theme engines.
+          export GTK_PATH="${config.system.path}/lib/gtk-2.0:${config.system.path}/lib/gtk-3.0"
 
-            # Set GTK_PATH so that GTK+ can find the theme engines.
-            export GTK_PATH="${config.system.path}/lib/gtk-2.0:${config.system.path}/lib/gtk-3.0"
+          # Set GTK_DATA_PREFIX so that GTK+ can find the Xfce themes.
+          export GTK_DATA_PREFIX=${config.system.path}
+        '';
+        start = ''
+          # Optionnal extra commands
+          ${cfg.extraSessionCommands}
 
-            # Set GTK_DATA_PREFIX so that GTK+ can find the Xfce themes.
-            export GTK_DATA_PREFIX=${config.system.path}
-
-            ${pkgs.stdenv.shell} ${pkgs.xfce.xinitrc} &
-            waitPID=$!
-          '';
+          # Start xfce
+          ${pkgs.stdenv.shell} ${pkgs.xfce.xinitrc} &
+          waitPID=$!
+        '';
       };
 
     services.xserver.updateDbusEnvironment = true;

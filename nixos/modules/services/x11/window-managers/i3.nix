@@ -57,6 +57,7 @@ in
     services.xserver.windowManager.session = [{
       name  = "i3";
       start = ''
+        # Optionnal, extra session commands
         ${cfg.extraSessionCommands}
 
         ${cfg.package}/bin/i3 ${optionalString (cfg.configFile != null)

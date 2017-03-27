@@ -61,6 +61,7 @@ in
         example = singleton
           { name = "kde";
             bgSupport = true;
+            environment = "export XXX=YYY;";
             start = "...";
           };
         description = ''
