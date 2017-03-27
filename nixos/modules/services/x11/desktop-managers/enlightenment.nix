@@ -42,7 +42,7 @@ in
 
     services.xserver.desktopManager.session = [
     { name = "Enlightenment";
-      start = ''
+      environment = ''
         # Set GTK_DATA_PREFIX so that GTK+ can find the themes
         export GTK_DATA_PREFIX=${config.system.path}
         # find theme engines
@@ -53,11 +53,12 @@ in
 
         # make available for D-BUS user services
         #export XDG_DATA_DIRS=$XDG_DATA_DIRS''${XDG_DATA_DIRS:+:}:${config.system.path}/share:${e.efl}/share
-
+      '';
+      start = ''
         # Update user dirs as described in http://freedesktop.org/wiki/Software/xdg-user-dirs/
         ${pkgs.xdg-user-dirs}/bin/xdg-user-dirs-update
 
-        exec ${e.enlightenment}/bin/enlightenment_start
+        ${e.enlightenment}/bin/enlightenment_start
       '';
     }];
 

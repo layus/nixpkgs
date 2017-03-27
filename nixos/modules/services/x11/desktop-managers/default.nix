@@ -60,6 +60,7 @@ in
         example = singleton
           { name = "kde";
             bgSupport = true;
+            environment = "export XXX=YYY;";
             start = "...";
           };
         description = ''
@@ -78,7 +79,7 @@ in
                 # Use a solid black background as fallback
                 ${pkgs.xorg.xsetroot}/bin/xsetroot -solid black
               fi
-            '';
+            '' + d.start;
           }) list;
           needBGPackages = [] != filter needBGCond list;
         };

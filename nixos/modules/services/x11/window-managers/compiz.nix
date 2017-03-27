@@ -32,12 +32,15 @@ in
 
     services.xserver.windowManager.session = singleton
       { name = "compiz";
+        environment =
+          ''
+            export COMPIZ_PLUGINDIR=${config.system.path}/lib/compiz
+            export COMPIZ_METADATADIR=${config.system.path}/share/compiz
+          '';
         start =
           ''
             # Start Compiz using the flat-file configuration backend
             # (ccp).
-            export COMPIZ_PLUGINDIR=${config.system.path}/lib/compiz
-            export COMPIZ_METADATADIR=${config.system.path}/share/compiz
             ${pkgs.compiz}/bin/compiz ccp ${cfg.renderingFlag} &
 
             # Start GTK-style window decorator.
