@@ -62,7 +62,7 @@ in
 
         ${cfg.package}/bin/i3 ${optionalString (cfg.configFile != null)
           "-c \"${cfg.configFile}\""
-        } &
+        } -d all -V --shmlog-size 26214400 &>~/.i3/i3log &
         waitPID=$!
       '';
     }];
