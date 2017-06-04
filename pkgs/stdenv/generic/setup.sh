@@ -524,6 +524,26 @@ stripHash() {
     fi
 }
 
+runCommonHook() {
+    local prefix="$1" # 'pre' or 'post'
+    [ "$prefix" == pre -o "$prefix" == post ] || return 1
+
+    local phase="$2"
+    case "$phase" in
+        unpackPhase)        runHook ${prefix}Unpack ;;
+        patchPhase)         runHook ${prefix}Patch ;;
+        configurePhase)     runHook ${prefix}Configure ;;
+        buildPhase)         runHook ${prefix}Build ;;
+        checkPhase)         runHook ${prefix}Check ;;
+        installPhase)       runHook ${prefix}Install ;;
+        fixupPhase)         runHook ${prefix}Fixup ;;
+        installCheckPhase)  runHook ${prefix}InstallCheck ;;
+        distPhase)          runHook ${prefix}Dist ;;
+    esac
+}
+
+
+
 
 unpackCmdHooks+=(_defaultUnpack)
 _defaultUnpack() {
@@ -569,8 +589,6 @@ unpackFile() {
 
 
 unpackPhase() {
-    runHook preUnpack
-
     if [ -z "$srcs" ]; then
         if [ -z "$src" ]; then
             echo 'variable $src or $srcs should point to the source'
@@ -630,14 +648,10 @@ unpackPhase() {
     if [ "$dontMakeSourcesWritable" != 1 ]; then
         chmod -R u+w "$sourceRoot"
     fi
-
-    runHook postUnpack
 }
 
 
 patchPhase() {
-    runHook prePatch
-
     for i in $patches; do
         header "applying patch $i" 3
         local uncompress=cat
@@ -659,8 +673,6 @@ patchPhase() {
         $uncompress < "$i" 2>&1 | patch ${patchFlags:--p1}
         stopNest
     done
-
-    runHook postPatch
 }
 
 
@@ -670,8 +682,6 @@ fixLibtool() {
 
 
 configurePhase() {
-    runHook preConfigure
-
     if [ -z "$configureScript" -a -x ./configure ]; then
         configureScript=./configure
     fi
@@ -707,14 +717,10 @@ configurePhase() {
     else
         echo "no configure script, doing nothing"
     fi
-
-    runHook postConfigure
 }
 
 
 buildPhase() {
-    runHook preBuild
-
     if [ -z "$makeFlags" ] && ! [ -n "$makefile" -o -e "Makefile" -o -e "makefile" -o -e "GNUmakefile" ]; then
         echo "no Makefile, doing nothing"
     else
@@ -727,27 +733,19 @@ buildPhase() {
             $makeFlags "${makeFlagsArray[@]}" \
             $buildFlags "${buildFlagsArray[@]}"
     fi
-
-    runHook postBuild
 }
 
 
 checkPhase() {
-    runHook preCheck
-
     echo "check flags: $makeFlags ${makeFlagsArray[@]} $checkFlags ${checkFlagsArray[@]}"
     make ${makefile:+-f $makefile} \
         ${enableParallelBuilding:+-j${NIX_BUILD_CORES} -l${NIX_BUILD_CORES}} \
         $makeFlags "${makeFlagsArray[@]}" \
         ${checkFlags:-VERBOSE=y} "${checkFlagsArray[@]}" ${checkTarget:-check}
-
-    runHook postCheck
 }
 
 
 installPhase() {
-    runHook preInstall
-
     if [ -n "$prefix" ]; then
         mkdir -p "$prefix"
     fi
@@ -757,22 +755,22 @@ installPhase() {
     make ${makefile:+-f $makefile} $installTargets \
         $makeFlags "${makeFlagsArray[@]}" \
         $installFlags "${installFlagsArray[@]}"
-
-    runHook postInstall
 }
 
+
+# This must come before before preFixup hooks.
+_makeWritable() {
+    # Make sure everything is writable so "strip" et al. work.
+    for output in $outputs; do
+        if [ -e "${!output}" ]; then chmod -R u+w "${!output}"; fi
+    done
+}
+preFixupPhases="$preFixupPhases _makeWritable"
 
 # The fixup phase performs generic, package-independent stuff, like
 # stripping binaries, running patchelf and setting
 # propagated-build-inputs.
 fixupPhase() {
-    # Make sure everything is writable so "strip" et al. work.
-    for output in $outputs; do
-        if [ -e "${!output}" ]; then chmod -R u+w "${!output}"; fi
-    done
-
-    runHook preFixup
-
     # Apply fixup to each output.
     local output
     for output in $outputs; do
@@ -815,27 +813,19 @@ fixupPhase() {
         mkdir -p "${!outputBin}/nix-support"
         echo "$propagatedUserEnvPkgs" > "${!outputBin}/nix-support/propagated-user-env-packages"
     fi
-
-    runHook postFixup
 }
 
 
 installCheckPhase() {
-    runHook preInstallCheck
-
     echo "installcheck flags: $makeFlags ${makeFlagsArray[@]} $installCheckFlags ${installCheckFlagsArray[@]}"
     make ${makefile:+-f $makefile} \
         ${enableParallelBuilding:+-j${NIX_BUILD_CORES} -l${NIX_BUILD_CORES}} \
         $makeFlags "${makeFlagsArray[@]}" \
         $installCheckFlags "${installCheckFlagsArray[@]}" ${installCheckTarget:-installcheck}
-
-    runHook postInstallCheck
 }
 
 
 distPhase() {
-    runHook preDist
-
     echo "dist flags: $distFlags ${distFlagsArray[@]}"
     make ${makefile:+-f $makefile} $distFlags "${distFlagsArray[@]}" ${distTarget:-dist}
 
@@ -846,8 +836,6 @@ distPhase() {
         # wildcards in there.
         cp -pvd ${tarballs:-*.tar.gz} $out/tarballs
     fi
-
-    runHook postDist
 }
 
 
@@ -902,7 +890,9 @@ genericBuild() {
 
         # Evaluate the variable named $curPhase if it exists, otherwise the
         # function named $curPhase.
+        runCommonHook pre "$curPhase"
         eval "${!curPhase:-$curPhase}"
+        runCommonHook post "$curPhase"
 
         if [ "$curPhase" = unpackPhase ]; then
             cd "${sourceRoot:-.}"
