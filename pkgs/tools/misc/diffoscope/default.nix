@@ -8,17 +8,17 @@
 python3.pkgs.buildPythonApplication rec {
   pname = "diffoscope";
   name = "${pname}-${version}";
-  version = "77";
+  version = "83";
 
   src = fetchgit {
     url = "git://anonscm.debian.org/reproducible/diffoscope.git";
     rev = "refs/tags/${version}";
-    sha256 = "0l5q24sqb88qkz62cz85bq65myfqig3z3m1lj2s92hdlqip9946b";
+    sha256 = "71f0f6fe142993e1fe8e21db1a20222a428cc1963cd46b80afa8fe9d2cffff00";
   };
 
   patches =
     [ # Ignore different link counts.
-      ./ignore_links.patch
+      #./ignore_links.patch
     ];
 
   postPatch = ''
