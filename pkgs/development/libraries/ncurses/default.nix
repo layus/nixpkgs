@@ -23,7 +23,7 @@ stdenv.mkDerivation rec {
     inherit sha256;
   };
 
-  patches = [ ./clang.patch ] ++ lib.optional (abiVersion == "5" && stdenv.cc.isGNU) ./gcc-5.patch;
+  patches = [ ./clang.patch ./getenv_caching.patch ] ++ lib.optional (abiVersion == "5" && stdenv.cc.isGNU) ./gcc-5.patch;
 
   outputs = [ "out" "dev" "man" ];
   setOutputFlags = false; # some aren't supported
