@@ -22,12 +22,7 @@
 }:
 
 let
-  src = fetch "llvm" "1nin64vz21hyng6jr19knxipvggaqlkl2l9jpd5czbc4c2pcnpg3";
-
-  aarch64Patch = fetchpatch {
-    url = https://reviews.llvm.org/file/data/2oqw5rhhklsapbjrhlpd/PHID-FILE-lvo4fcs6hjvkxb5wneg2/D40423.diff;
-    sha256 = "0b0h7n7lxw33pn2j061hm9050zn263gmiig937g5cmcvjimxlybb";
-  };
+  src = fetch "llvm" "1c07i0b61j69m578lgjkyayg419sh7sn40xb3j112nr2q2gli9sz";
 
   # Used when creating a version-suffixed symlink of libLLVM.dylib
   shortVersion = with stdenv.lib;
@@ -81,7 +76,7 @@ in stdenv.mkDerivation rec {
     # Revert compiler-rt commit that makes codesign mandatory
     patch -p1 -i ${./compiler-rt-codesign.patch} -d projects/compiler-rt
   '' + stdenv.lib.optionalString stdenv.isAarch64 ''
-    patch -p0 < ${aarch64Patch}
+    patch -p0 < ${../aarch64.patch}
   '';
 
   # hacky fix: created binaries need to be run before installation

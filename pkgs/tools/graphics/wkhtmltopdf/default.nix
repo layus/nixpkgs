@@ -21,7 +21,6 @@ stdenv.mkDerivation rec {
       rev    = "fe194f9dac0b515757392a18f7fc9527c91d45ab"; # From git submodule spec in wkhtml repo.
       sha256 = "1j2ld2bfacnn3vm2l1870v55sj82bq4y8zkawmlx2y5j63d8vr23";
     };
-    postConfigure = ""; # The patch "parallel-build.patch" does not apply.
     configureFlags =
       ''
         -dbus-linked
@@ -130,7 +129,7 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
-    homepage = http://wkhtmltopdf.org/;
+    homepage = https://wkhtmltopdf.org/;
     description = "Tools for rendering web pages to PDF or images";
     longDescription = ''
       wkhtmltopdf and wkhtmltoimage are open source (LGPL) command line tools
