@@ -87,7 +87,7 @@ in
 
   # Passthru information, if any.
 , passthru ? {}
-}:
+}@_args:
 
 assert builtins.isList urls;
 assert (urls == []) != (url == "");
@@ -142,5 +142,5 @@ else stdenvNoCC.mkDerivation {
   '';
 
   inherit meta;
-  inherit passthru;
+  passthru = passthru // { inherit _args; };
 }

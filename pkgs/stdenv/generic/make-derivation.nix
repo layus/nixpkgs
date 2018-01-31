@@ -54,7 +54,6 @@ rec {
 
     , crossConfig ? null
     , meta ? {}
-    , passthru ? {}
     , pos ? # position used in error messages and for meta.position
         (if attrs.meta.description or null != null
           then builtins.unsafeGetAttrPos "description" attrs.meta
@@ -69,6 +68,7 @@ rec {
     , hardeningEnable ? []
     , hardeningDisable ? []
 
+    #, passthru ? {} # Implicit...
     , ... } @ attrs:
 
     # TODO(@Ericson2314): Make this more modular, and not O(n^2).
@@ -243,6 +243,9 @@ rec {
                        then lib.all (d: d.meta.evaluates or true) references
                        else true);
         };
+
+      # Keep a reference to attrs, since it is kept anyway by overrideAttrs below.
+      passthru = (attrs.passthru or {}) // { _attrs = attrs; };
 
     in
 
