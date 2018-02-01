@@ -4108,7 +4108,7 @@ in {
     doCheck = false; # requires redis server
     propagatedBuildInputs = with self; [
       setuptools docker_registry_core blinker flask gevent gunicorn pyyaml
-      requests rsa sqlalchemy setuptools backports_lzma m2crypto
+      requests rsa sqlalchemy setuptools backports_lzma M2Crypto
     ];
 
     patchPhase = "> requirements/main.txt";
@@ -4552,6 +4552,8 @@ in {
     else throw "faulthandler is built into ${python.executable}";
 
   fedpkg = callPackage ../development/python-modules/fedpkg { };
+
+  fedmsg = callPackage ../development/python-modules/fedmsg { };
 
   flit = callPackage ../development/python-modules/flit { };
 
@@ -5780,7 +5782,7 @@ in {
 
     meta = {
       homepage = https://github.com/cedadev/ndg_httpsclient/;
-      description = "Provide enhanced HTTPS support for httplib and urllib2 using PyOpenSSL";
+      description = "Provide enhanced HTTPS support for httplib and urllib2 using pyopenssl";
       license = licenses.bsd2;
       maintainers = with maintainers; [ ];
     };
@@ -9875,9 +9877,9 @@ in {
     };
   };
 
-  m2crypto = buildPythonPackage rec {
+  M2Crypto = buildPythonPackage rec {
     version = "0.24.0";
-    name = "m2crypto-${version}";
+    name = "M2Crypto-${version}";
 
     src = pkgs.fetchurl {
       url = "mirror://pypi/M/M2Crypto/M2Crypto-${version}.tar.gz";
@@ -9897,6 +9899,28 @@ in {
       homepage = http://chandlerproject.org/Projects/MeTooCrypto;
     };
   };
+
+  m2ext = buildPythonPackage rec {
+    version = "0.1";
+    pname = "m2ext";
+
+    src = pkgs.fetchurl {
+      url = "mirror://pypi/m/m2ext/m2ext-${version}.tar.gz";
+      sha256 = "04q363hgl2k16xvrrgnqv0805pvsqgzpm2adycl8lw7j2wf3kdnd";
+    };
+
+    buildInputs = with self; [ pkgs.swig2 pkgs.openssl ];
+
+    setupPyBuildFlags = [ "--openssl='${pkgs.openssl.dev}'" ];
+
+    doCheck = false;
+
+    meta = {
+      description = "This package contains some extended functions which are not (yet) available in M2Crypto trunk.";
+      homepage = https://github.com/abbot/m2ext;
+    };
+  };
+
 
   Mako = callPackage ../development/python-modules/Mako { };
 
@@ -10246,6 +10270,11 @@ in {
       license = licenses.mit;
     };
   };
+
+  moksha = callPackage ../development/python-modules/moksha { };
+  moksha_hub = callPackage ../development/python-modules/moksha/hub.nix { };
+  moksha_wsgi = callPackage ../development/python-modules/moksha/wsgi.nix { };
+  moksha_common = callPackage ../development/python-modules/moksha/common.nix { };
 
   mplleaflet = callPackage ../development/python-modules/mplleaflet { };
 
@@ -11895,7 +11924,7 @@ in {
       sha256 = "0s8p7gkp64w6r5rnxpbvl2dgb5p85kq2skcqm6qxn5ddadhw2sfz";
     };
     buildInputs = with pkgs; [ bashInteractive ]; # needed for bash-completion helper
-    propagatedBuildInputs = with self; [ urlgrabber m2crypto pyyaml ];
+    propagatedBuildInputs = with self; [ urlgrabber M2Crypto pyyaml ];
     postInstall = ''
       ln -s $out/bin/osc-wrapper.py $out/bin/osc
       install -D -m444 osc.fish $out/etc/fish/completions/osc.fish
@@ -14639,7 +14668,7 @@ in {
   };
 
   pyopenssl = buildPythonPackage rec {
-    pname = "pyOpenSSL";
+    pname = "pyopenssl";
     name = "${pname}-${version}";
     version = "17.2.0";
 
@@ -17864,6 +17893,10 @@ in {
   twisted = callPackage ../development/python-modules/twisted { };
 
   txtorcon = callPackage ../development/python-modules/txtorcon { };
+
+  txWS = callPackage ../development/python-modules/twisted/ws.nix { };
+
+  txZMQ = callPackage ../development/python-modules/twisted/zmq.nix { };
 
   tzlocal = callPackage ../development/python-modules/tzlocal { };
 
