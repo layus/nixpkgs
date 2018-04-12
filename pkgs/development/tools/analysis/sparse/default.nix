@@ -1,4 +1,4 @@
-{ fetchurl, stdenv, pkgconfig, libxml2, llvm }:
+{ fetchurl, stdenv, pkgconfig, libxml2, llvm, perl }:
 
 stdenv.mkDerivation rec {
   name = "sparse-0.5.0";
@@ -13,7 +13,7 @@ stdenv.mkDerivation rec {
   '';
 
   nativeBuildInputs = [ pkgconfig ];
-  buildInputs = [ libxml2 llvm ];
+  buildInputs = [ libxml2 llvm perl ];
   doCheck = true;
 
   meta = {
