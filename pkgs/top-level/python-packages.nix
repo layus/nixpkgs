@@ -448,6 +448,8 @@ in {
 
   pygtksourceview = callPackage ../development/python-modules/pygtksourceview { };
 
+  pygtkspellcheck = callPackage ../development/python-modules/pygtkspellcheck { };
+
   pyGtkGlade = self.pygtk.override {
     libglade = pkgs.gnome2.libglade;
   };
