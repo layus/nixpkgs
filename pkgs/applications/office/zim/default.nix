@@ -1,5 +1,14 @@
-{ stdenv, fetchurl, python2Packages }:
+{ stdenv, fetchurl, python2Packages
+, withSpellCheck ? true, hunspellWithDicts
+}:
 
+#
+# Zim has many plugins depending on external programs and commands.
+# For most of them, it is sufficient to have the executable in the PATH
+# For example, the VCS plugin finds git/bzr/hg if they are installed.
+#
+# For other plugins, we need special python packages that are not found when
+# installed in the path, like with gtkspell and gtkspellcheck.
 #
 # TODO: Declare configuration options for the following optional dependencies:
 #  -  File stores: hg, git, bzr
@@ -16,7 +25,11 @@ python2Packages.buildPythonApplication rec {
     sha256 = "05fzb24a2s3pm89zb6gwa48wb925an5i652klx8yk9pn23h1h5fr";
   };
 
-  propagatedBuildInputs = with python2Packages; [ pyGtkGlade pyxdg pygobject2 ];
+  propagatedBuildInputs = with python2Packages; [
+    pyGtkGlade pyxdg pygobject2
+  ] ++ lib.optional (withSpellCheck) [
+    pygtkspellcheck
+  ];
 
   preBuild = ''
     export HOME=$TMP
