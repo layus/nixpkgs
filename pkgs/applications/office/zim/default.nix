@@ -1,5 +1,6 @@
-{ stdenv, fetchurl, python2Packages
-, withSpellCheck ? true, hunspellWithDicts
+{ stdenv, lib, fetchurl, python2Packages
+, hunspell, gnome2
+, plugins ? [ "sourceview" ]
 }:
 
 #
@@ -26,9 +27,9 @@ python2Packages.buildPythonApplication rec {
   };
 
   propagatedBuildInputs = with python2Packages; [
-    pyGtkGlade pyxdg pygobject2
-  ] ++ lib.optional (withSpellCheck) [
-    pygtkspellcheck
+    pyGtkGlade pyxdg pygobject2 pygtkspellcheck pygtksourceview
+  ] ++ lib.optionals stdenv.isDarwin [
+    gtk-mac-integration-gtk2
   ];
 
   preBuild = ''
@@ -39,7 +40,7 @@ python2Packages.buildPythonApplication rec {
 
 
   preFixup = ''
-    export makeWrapperArgs="--prefix XDG_DATA_DIRS : $out/share --argv0 $out/bin/.zim-wrapped"
+    export makeWrapperArgs="--prefix XDG_DATA_DIRS : $out/share --argv0 $out/bin/.zim-wrapped --prefix PATH : ${pluginsEnv}/bin"
   '';
 
   # RuntimeError: could not create GtkClipboard object
@@ -49,11 +50,22 @@ python2Packages.buildPythonApplication rec {
     python test.py
   '';
 
+  packages = with stdenv.pkgs; {
+    spellcheck = [ hunspell ];
+    sourceview = [ gnome2.gtksourceview ];
+    # etc.
+  };
+
+  pluginsEnv = pkgs.buildEnv {
+    name = "zim";
+    paths = with lib; concatLists (attrValues (filterAttrs (elem plugins) packages) );
+  };
 
   meta = with stdenv.lib; {
     description = "A desktop wiki";
     homepage = http://zim-wiki.org;
     license = licenses.gpl2Plus;
     maintainers = with maintainers; [ pSub ];
+    passthru = [ "packages" ];
   };
 }
