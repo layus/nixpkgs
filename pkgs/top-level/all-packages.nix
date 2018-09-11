@@ -4796,6 +4796,8 @@ with pkgs;
 
   pwndbg = callPackage ../development/tools/misc/pwndbg { };
 
+  pycam = callPackage ../applications/misc/pycam { };
+
   pycangjie = pythonPackages.pycangjie;
 
   pydb = callPackage ../development/tools/pydb { };
