@@ -1,0 +1,10 @@
+diff --git a/interface/CMakeLists.txt b/interface/CMakeLists.txt
+index 0e89bb5..56662bb 100644
+--- a/interface/CMakeLists.txt
++++ b/interface/CMakeLists.txt
+@@ -97,4 +97,4 @@ set_target_properties( heeksintf PROPERTIES SOVERSION ${CPACK_PACKAGE_VERSION_MA
+ install( TARGETS heeksintf DESTINATION ${LIB_INSTALL_DIR} )
+ 
+ file( GLOB sources ${heeksintf_SRCS} ${heeksintf_HDRS} )
+-install( FILES ${sources} DESTINATION "share/heekscad/interface" COMPONENT heeksintf )
++install( FILES ${sources} DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/heekscad/interface" COMPONENT heeksintf )
