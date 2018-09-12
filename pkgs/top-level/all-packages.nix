@@ -10108,6 +10108,8 @@ with pkgs;
 
   libarchive = callPackage ../development/libraries/libarchive { };
 
+  libarea = callPackage ../development/libraries/libarea { };
+
   libasr = callPackage ../development/libraries/libasr { };
 
   libass = callPackage ../development/libraries/libass { };
@@ -19928,6 +19930,12 @@ with pkgs;
     inherit (haskellPackages) ghcWithPackages;
     ffmpeg = ffmpeg_2;
   };
+
+  heekscad = callPackage ../applications/graphics/heekscad {
+    wxGTK = wxGTK30;
+  };
+
+  heekscnc = callPackage ../applications/graphics/heekscnc { };
 
   hexen = callPackage ../games/hexen { };
 
