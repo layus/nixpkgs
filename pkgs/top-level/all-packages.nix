@@ -11360,6 +11360,8 @@ with pkgs;
 
   opencascade = callPackage ../development/libraries/opencascade { };
 
+  opencamlib = callPackage ../development/libraries/opencamlib { };
+
   opencl-headersGen = v: callPackage ../development/libraries/opencl-headers { version = v; };
   opencl-headers_1_2 = opencl-headersGen "12";
   opencl-headers_2_2 = opencl-headersGen "22";
