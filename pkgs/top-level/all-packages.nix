@@ -3817,6 +3817,10 @@ with pkgs;
 
   limesurvey = callPackage ../servers/limesurvey { };
 
+  linuxcnc = callPackage ../applications/graphics/linuxcnc {
+    python = python2Full;
+  };
+
   linuxquota = callPackage ../tools/misc/linuxquota { };
 
   localtime = callPackage ../tools/system/localtime { };
@@ -14863,6 +14867,8 @@ with pkgs;
 
   cabin = callPackage ../data/fonts/cabin { };
 
+  camotics = callPackage ../applications/graphics/camotics { };
+
   camingo-code = callPackage ../data/fonts/camingo-code { };
 
   combinatorial_designs = callPackage ../data/misc/combinatorial_designs { };
@@ -19914,6 +19920,7 @@ with pkgs;
 
   heekscad = callPackage ../applications/graphics/heekscad {
     wxGTK = wxGTK30;
+    stdenvGcc5 = overrideCC stdenv gcc5;
   };
 
   heekscnc = callPackage ../applications/graphics/heekscnc { };
