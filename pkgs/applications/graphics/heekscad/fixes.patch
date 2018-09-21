@@ -1,0 +1,13 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 7978096..6a2f323 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -232,7 +232,7 @@ set( heekscad_SRCS
+     )
+ 
+ set( HeeksCAD_LIBS
+-       -L../bin -lheekstinyxml -lheeksintf
++       heekstinyxml heeksintf
+     )
+ add_executable( heekscad ${heekscad_SRCS} ${platform_SRCS} )
+ target_link_libraries( heekscad
