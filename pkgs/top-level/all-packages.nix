@@ -6805,6 +6805,8 @@ with pkgs;
 
   hugs = callPackage ../development/interpreters/hugs { };
 
+  openjfx = callPackage ../development/libraries/openjfx { };
+
   bootjdk = callPackage ../development/compilers/openjdk/bootstrap.nix { version = "10"; };
 
   openjdk8 =
