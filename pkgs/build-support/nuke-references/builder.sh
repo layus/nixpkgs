@@ -20,7 +20,7 @@ shift \$((\$OPTIND-1))
 
 for i in "\$@"; do
     if test ! -L "\$i" -a -f "\$i"; then
-        cat "\$i" | $perl/bin/perl -pe "s|$NIX_STORE/\$excludes[a-z0-9]{32}-|$NIX_STORE/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-|g" > "\$i.tmp"
+        cat "\$i" | $perl/bin/perl -pe "s|$NIX_STORE/\$excludes[a-z0-9]{32}-|$NIX_STORE/nuke-refs_nuked_this_store_hash-|g" > "\$i.tmp"
         if test -x "\$i"; then chmod +x "\$i.tmp"; fi
         mv "\$i.tmp" "\$i"
     fi
