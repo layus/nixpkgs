@@ -1,3 +1,5 @@
+/*@ LANGUAGE reindent @*/
+
 { config, lib, pkgs, ... }:
 
 with lib;
@@ -77,13 +79,7 @@ let
     monitors = flip map xrandrHeads (h: ''
       Option "monitor-${h.config.output}" "${h.name}"
     '');
-    # First option is indented through the space in the config but any
-    # subsequent options aren't so we need to apply indentation to
-    # them here
-    monitorsIndented = if length monitors > 1
-      then singleton (head monitors) ++ map (m: "  " + m) (tail monitors)
-      else monitors;
-  in concatStrings monitorsIndented;
+  in concatStrings monitors;
 
   # Here we chain every monitor from the left to right, so we have:
   # m4 right of m3 right of m2 right of m1   .----.----.----.----.
@@ -631,7 +627,7 @@ in
       ]
       ++ optional (elem "virtualbox" cfg.videoDrivers) xorg.xrefresh;
 
-    xdg = { 
+    xdg = {
       autostart.enable = true;
       menus.enable = true;
       mime.enable = true;
@@ -770,14 +766,11 @@ in
             ${optionalString (cfg.monitorSection != "") ''
               Monitor "Monitor[0]"
             ''}
-
             ${cfg.screenSection}
             ${driver.screenSection or ""}
-
             ${optionalString (cfg.defaultDepth != 0) ''
               DefaultDepth ${toString cfg.defaultDepth}
             ''}
-
             ${optionalString
                 (driver.name != "virtualbox" &&
                  (cfg.resolutions != [] ||
@@ -797,7 +790,6 @@ in
                   '';
               in concatMapStrings f [8 16 24]
             )}
-
           EndSection
         '')}
 

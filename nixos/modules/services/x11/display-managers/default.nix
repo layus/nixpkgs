@@ -1,3 +1,5 @@
+/*@ LANGUAGE reindent @*/
+
 # This module declares the options to define a *display manager*, the
 # program responsible for handling X logins (such as xdm, gdb, or
 # SLiM).  The display manager allows the user to select a *session

@@ -1,3 +1,5 @@
+/*@ LANGUAGE reindent @*/
+
 { config, lib, pkgs, ... }:
 
 with lib;
@@ -58,7 +60,6 @@ in
       name  = "i3";
       start = ''
         ${cfg.extraSessionCommands}
-
         ${cfg.package}/bin/i3 ${optionalString (cfg.configFile != null)
           "-c \"${cfg.configFile}\""
         } &

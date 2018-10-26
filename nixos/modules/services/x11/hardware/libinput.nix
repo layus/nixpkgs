@@ -1,3 +1,5 @@
+/*@ LANGUAGE reindent @*/
+
 { config, lib, pkgs, ... }:
 
 with lib;
