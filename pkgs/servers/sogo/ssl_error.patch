@@ -1,0 +1,18 @@
+--- SOGo-4.0.4/UI/MailPartViewers/UIxMailPartSignedViewer.m.bis	2018-12-03 01:06:53.403094631 +0100
++++ SOGo-4.0.4/UI/MailPartViewers/UIxMailPartSignedViewer.m	2018-12-03 01:11:57.979242002 +0100
+@@ -173,13 +173,13 @@
+ 	  ERR_load_crypto_strings();
+           SSL_load_error_strings();
+           sslError = ERR_reason_error_string(err);
+-          validationMessage = [[self labelForKey: [NSString stringWithUTF8String: sslError ? sslError : @"No error information available"]] retain];
++          validationMessage = [[self labelForKey: sslError ? [NSString stringWithUTF8String: sslError] : @"No error information available"] retain];
+ #elif OPENSSL_VERSION_NUMBER < 0x10100000L
+           const char* sslError;
+ 	  ERR_load_crypto_strings();
+           SSL_load_error_strings();
+           sslError = ERR_reason_error_string(err);
+-          validationMessage = [[self labelForKey: [NSString stringWithUTF8String: sslError ? sslError : @"No error information available"]] retain];
++          validationMessage = [[self labelForKey: sslError ? [NSString stringWithUTF8String: sslError] : @"No error information available"] retain];
+ #else
+ 	  validationMessage = [[self labelForKey: @"No error information available"] retain];
+ #endif /* HAVE_GNUTLS */

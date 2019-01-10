@@ -5499,6 +5499,8 @@ in
     inherit (darwin.apple_sdk.frameworks) Security;
   };
 
+  sogo = callPackage ../servers/sogo { };
+
   solr = callPackage ../servers/search/solr { };
 
   solvespace = callPackage ../applications/graphics/solvespace { };
