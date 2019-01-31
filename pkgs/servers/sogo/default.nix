@@ -50,7 +50,7 @@ rec {
 
   };
 
-  SOGo = llvmPackages.stdenv.mkDerivation rec {
+  SOGo = gnustep.gsmakeDerivation /*llvmPackages.stdenv.mkDerivation*/ rec {
     pname = "SOGo";
     version = "4.0.4";
     name = "${pname}-${version}";
@@ -61,13 +61,17 @@ rec {
     };
 
     nativeBuildInputs = [ gnustep.make ];
+
     buildInputs = [
-      #gcc
       SOPE
       clang
       gnustep.base gnustep.libobjc
       libxml2 openssl openldap postgresql libmemcached curl.dev
     ];
+
+    preConfigure = ''
+      export "''${installFlagsArray[@]}"
+    '';
 
     patches = [ ./ssl_error.patch ];
 
@@ -84,7 +88,15 @@ rec {
       echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
       echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL
-      '';
+      makeFlagsArray=("''${installFlagsArray[@]}")
+    '';
+
+    postFixup = ''
+      for i in $out/bin/*; do
+        echo "wrapping $(basename $i)"
+        wrapGSMake "$i" "$out/share/.GNUstep.conf"
+      done
+    '';
 
     hardeningDisable = [ "fortify" ];
   };
