@@ -1,7 +1,5 @@
 { stdenv, fetchurl
 , gnustep
-#, gcc
-#, gcc-objc
 , clang
 , llvmPackages
 , libxml2
@@ -9,26 +7,27 @@
 , openldap
 , postgresql
 , libmemcached
+, mysql
 , curl
 }:
 
 rec {
-  SOPE = gnustep.gsmakeDerivation /*llvmPackages.stdenv.mkDerivation*/ rec {
+  SOPE = gnustep.gsmakeDerivation rec {
     pname = "SOPE";
-    version = "4.0.4";
+    version = "4.0.5";
     name = "${pname}-${version}";
 
     src = fetchurl {
       url = "https://sogo.nu/files/downloads/SOGo/Sources/${name}.tar.gz";
-      sha256 = "1yyjfa8kq1xzarx87n5sd6hbkd2nw1s7dw72jkvd61nmiqivg0nq";
+      sha256 = "1xmzipkkpqjh1lm2ylhhvp8wj32dd5hdb2hmwawpkyqnzp283xpn";
     };
+
+    patches = [ ./wod.patch ];
 
     nativeBuildInputs = [ gnustep.make ];
     buildInputs = [
-      #gcc
-      clang
       gnustep.base gnustep.libobjc
-      libxml2 openssl openldap postgresql libmemcached curl.dev
+      libxml2 openssl openldap postgresql libmemcached curl.dev mysql
     ];
 
     prePatch = ''
@@ -43,6 +42,7 @@ rec {
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
     '';
 
+    # FIXME: Still needed with --with-gnustep ?
     postInstall = ''
       mkdir -p $out/lib/GNUstep
       ln -s $out/lib/sope-* $out/lib/GNUstep
@@ -53,14 +53,14 @@ rec {
     hardeningDisable = [ "fortify" ];
   };
 
-  SOGo = gnustep.gsmakeDerivation /*llvmPackages.stdenv.mkDerivation*/ rec {
+  SOGo = gnustep.gsmakeDerivation rec {
     pname = "SOGo";
-    version = "4.0.4";
+    version = "4.0.5";
     name = "${pname}-${version}";
 
     src = fetchurl {
       url = "https://sogo.nu/files/downloads/SOGo/Sources/${name}.tar.gz";
-      sha256 = "0mk2wb0kh01n3m79c5pp8llc873sk2v7s4i09n5chi02h58bfglf";
+      sha256 = "0q4hxpk0szcghdzkysjgl73qm698pmrfdz72hbfrg6kikjsr2hpn";
     };
 
     nativeBuildInputs = [ gnustep.make ];
@@ -79,18 +79,20 @@ rec {
     patches = [ ./ssl_error.patch ];
 
     prePatch = ''
-      sed -i configure \
-        -e "/^[[:space:]]*exit 1 *$/d" \
-        -e 's/grep GNUSTEP/grep "^GNUSTEP"/'
+      export GNUSTEP_LOCAL_ROOT=$out
+      #sed -i configure \
+      #  -e "/^[[:space:]]*exit 1 *$/d" \
+      #  -e 's/grep GNUSTEP/grep "^GNUSTEP"/'
       sed -i -e '/wobundle.make/ s#$(GNUSTEP_MAKEFILES)#${SOPE}/share/GNUstep/Makefiles#' \
         SoObjects/Mailer/GNUmakefile \
         SoObjects/Appointments/GNUmakefile
     '';
 
+    preConfigure = ''
+    '';
+
     preBuild = ''
-      echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
-      echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL
       makeFlagsArray=("''${installFlagsArray[@]}")
     '';
 
@@ -102,6 +104,8 @@ rec {
         wrapGSMake "$i" "$out/share/.GNUstep.conf"
       done
     '';
+
+    enableParallelBuilding = true;
 
     hardeningDisable = [ "fortify" ];
   };
