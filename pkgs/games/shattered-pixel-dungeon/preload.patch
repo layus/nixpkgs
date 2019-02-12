@@ -1,0 +1,19 @@
+diff --git a/desktop/src/com/watabou/pd/desktop/DesktopLauncher.java b/desktop/src/com/watabou/pd/desktop/DesktopLauncher.java
+index f0023bb..d29bb1d 100644
+--- a/desktop/src/com/watabou/pd/desktop/DesktopLauncher.java
++++ b/desktop/src/com/watabou/pd/desktop/DesktopLauncher.java
+@@ -32,6 +32,14 @@ import com.watabou.utils.PDPlatformSupport;
+ 
+ public class DesktopLauncher {
+ 	public static void main (String[] arg) {
++        System.load("@gdx@");
++        SharedLibraryLoader.setLoaded("gdx");
++        System.load("@lwjgl@");
++        SharedLibraryLoader.setLoaded("lwjgl");
++        System.load("@openal@");
++        SharedLibraryLoader.setLoaded("openal");
++        SharedLibraryLoader.setLoaded("Xxf86vm");
++
+ 		String version = DesktopLauncher.class.getPackage().getSpecificationVersion();
+ 		if (version == null) {
+ 			version = "0.7.1d";
