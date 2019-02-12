@@ -37,18 +37,15 @@ rec {
     '';
 
     preBuild = ''
+      # Silence warnings about duplicate file dependencies
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
-    '';
-
-    # FIXME: Still needed with --with-gnustep ?
-    postInstall = ''
-      mkdir -p $out/lib/GNUstep
-      ln -s $out/lib/sope-* $out/lib/GNUstep
     '';
 
     configureFlags = [ "--with-gnustep" ];
 
     hardeningDisable = [ "fortify" ];
+
+    enableParallelBuilding = true;
   };
 
   SOGo = gnustep.gsmakeDerivation rec {
@@ -70,24 +67,23 @@ rec {
       libxml2 openssl openldap postgresql libmemcached curl.dev
     ];
 
-    preConfigure = ''
-      export "''${installFlagsArray[@]}"
-    '';
-
-    patches = [ ./ssl_error.patch ];
+    patches = [ ./ssl_error.patch ./gnustep-root.patch ];
 
     prePatch = ''
-      export GNUSTEP_LOCAL_ROOT=$out
-      #sed -i configure \
-      #  -e "/^[[:space:]]*exit 1 *$/d" \
-      #  -e 's/grep GNUSTEP/grep "^GNUSTEP"/'
+      # fix grep invocation to ignore NIX_GNUSTEP when grepping for GNUSTEP
+      sed -i configure \
+        -e 's/grep GNUSTEP/grep "^GNUSTEP"/'
       sed -i -e '/wobundle.make/ s#$(GNUSTEP_MAKEFILES)#${SOPE}/share/GNUstep/Makefiles#' \
         SoObjects/Mailer/GNUmakefile \
         SoObjects/Appointments/GNUmakefile
     '';
 
+    # XXX: preConfigure cannot be used. It is overwritten by gsmakederivation
+
     preBuild = ''
+      # Silence warnings about duplicate file dependencies
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
+      # Export install flags needed at build time when hard-coding .so location
       makeFlagsArray=("''${installFlagsArray[@]}")
     '';
 
