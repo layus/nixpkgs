@@ -5386,8 +5386,6 @@ in
 
   sharutils = callPackage ../tools/archivers/sharutils { };
 
-  shattered-pixel-dungeon = callPackage ../games/shattered-pixel-dungeon { };
-
   schema2ldif = callPackage ../tools/text/schema2ldif { };
 
   shocco = callPackage ../tools/text/shocco { };
