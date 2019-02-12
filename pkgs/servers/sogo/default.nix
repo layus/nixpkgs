@@ -13,7 +13,7 @@
 }:
 
 rec {
-  SOPE = llvmPackages.stdenv.mkDerivation rec {
+  SOPE = gnustep.gsmakeDerivation /*llvmPackages.stdenv.mkDerivation*/ rec {
     pname = "SOPE";
     version = "4.0.4";
     name = "${pname}-${version}";
@@ -43,11 +43,14 @@ rec {
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
     '';
 
-    #configureFlags = [ "--with-gnustep" ];
+    postInstall = ''
+      mkdir -p $out/lib/GNUstep
+      ln -s $out/lib/sope-* $out/lib/GNUstep
+    '';
+
+    configureFlags = [ "--with-gnustep" ];
 
     hardeningDisable = [ "fortify" ];
-
-
   };
 
   SOGo = gnustep.gsmakeDerivation /*llvmPackages.stdenv.mkDerivation*/ rec {
@@ -91,6 +94,8 @@ rec {
       makeFlagsArray=("''${installFlagsArray[@]}")
     '';
 
+    # FIXME: This is part of gsmakederivation, but it happens before /sbin gets
+    # moved to /bin, and thus never wraps /sbin stuff.
     postFixup = ''
       for i in $out/bin/*; do
         echo "wrapping $(basename $i)"
