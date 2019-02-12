@@ -22,8 +22,6 @@ rec {
       sha256 = "1xmzipkkpqjh1lm2ylhhvp8wj32dd5hdb2hmwawpkyqnzp283xpn";
     };
 
-    patches = [ ./wod.patch ];
-
     nativeBuildInputs = [ gnustep.make ];
     buildInputs = [
       gnustep.base gnustep.libobjc
