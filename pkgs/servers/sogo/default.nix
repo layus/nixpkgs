@@ -88,9 +88,6 @@ rec {
         SoObjects/Appointments/GNUmakefile
     '';
 
-    preConfigure = ''
-    '';
-
     preBuild = ''
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
       makeFlagsArray=("''${installFlagsArray[@]}")
