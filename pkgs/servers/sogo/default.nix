@@ -78,26 +78,16 @@ rec {
         SoObjects/Appointments/GNUmakefile
     '';
 
-    # XXX: preConfigure cannot be used. It is overwritten by gsmakederivation
+    configureFlags = [ "--disable-debug" ];
 
     preBuild = ''
       # Silence warnings about duplicate file dependencies
       export NIX_GNUSTEP_MAKEFILES_ADDITIONAL=$(echo $NIX_GNUSTEP_MAKEFILES_ADDITIONAL | tr " " "\n" | awk '!_[$0]++' | tr "\n" " ")
       # Export install flags needed at build time when hard-coding .so location
-      makeFlagsArray=("''${installFlagsArray[@]}")
-    '';
-
-    # FIXME: This is part of gsmakederivation, but it happens before /sbin gets
-    # moved to /bin, and thus never wraps /sbin stuff.
-    postFixup = ''
-      for i in $out/bin/*; do
-        echo "wrapping $(basename $i)"
-        wrapGSMake "$i" "$out/share/.GNUstep.conf"
-      done
+      makeFlagsArray+=("''${installFlagsArray[@]}")
     '';
 
     enableParallelBuilding = true;
 
-    hardeningDisable = [ "fortify" ];
   };
 }

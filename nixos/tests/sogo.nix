@@ -94,7 +94,11 @@ import ./make-test.nix {
 
   testScript = ''
     $machine->waitForUnit('sogo.service');
+    $machine->systemctl('restart sogo.service');
+    $machine->waitForUnit('sogo.service');
     $machine->waitForUnit('nginx.service');
     print $machine->execute('curl -vL http://127.0.0.1/SOGo/login');
+    my $login = q[curl --header "Content-Type: application/json" --request POST --data '{"username":"xyz","password":"xyz"}'];
+    print $machine->execute($login)
   '';
 }

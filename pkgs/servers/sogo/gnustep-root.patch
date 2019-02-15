@@ -1,0 +1,14 @@
+diff --git a/configure b/configure
+index 8536dfcb5..cb574a977 100755
+--- a/configure
++++ b/configure
+@@ -192,6 +192,9 @@ validateArgs() {
+ 	      echo ""
+ 	  fi
+ 	;;
++    "x$out")
++	  echo "Special-cased build dir for Nix. This could lead to build issues."
++	;;
+     *)
+ 	  echo "error: specified prefix is not a GNUstep root: '$ARG_PREFIX'"
+ 	  exit 1
