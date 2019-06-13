@@ -7912,8 +7912,11 @@ in
 
   mosml = callPackage ../development/compilers/mosml { };
 
+  mozart = mozart2;
+
   mozart-binary = callPackage ../development/compilers/mozart/binary.nix { };
-  mozart = mozart-binary;
+
+  mozart2 = callPackages ../development/compilers/mozart { };
 
   nim = callPackage ../development/compilers/nim { };
   nrpl = callPackage ../development/tools/nrpl { };
