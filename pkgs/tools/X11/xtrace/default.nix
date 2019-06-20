@@ -1,28 +1,27 @@
-{ stdenv, autoreconfHook, fetchgit, libX11, xauth, makeWrapper }:
+{ stdenv, autoreconfHook, fetchFromGitLab, libX11, xauth, makeWrapper }:
 
-let version = "1.3.1"; in
-stdenv.mkDerivation {
+let version = "1.4.0";
+in stdenv.mkDerivation {
   name = "xtrace-${version}";
-  src = fetchgit {
-    url = "git://git.debian.org/xtrace/xtrace.git";
-    rev = "refs/tags/xtrace-1.3.1";
-    sha256 = "1g26hr6rl7bbb9cwqk606nbbapslq3wnsy8j28azrgi8hgfqhjfi";
+  src = fetchFromGitLab rec {
+    domain = "salsa.debian.org";
+    owner = "debian";
+    repo = "xtrace";
+    rev = "xtrace-${version}";
+    name = "${rev}-source";
+    sha256 = "1yff6x847nksciail9jly41mv70sl8sadh0m5d847ypbjmxcwjpq";
   };
 
   nativeBuildInputs = [ autoreconfHook ];
   buildInputs = [ libX11 makeWrapper ];
 
-  preConfigure = ''
-    ./autogen.sh
+  postInstall = ''
+    wrapProgram "$out/bin/xtrace" \
+        --prefix PATH ':' "${xauth}/bin"
   '';
 
-  postInstall =
-    '' wrapProgram "$out/bin/xtrace" \
-         --prefix PATH ':' "${xauth}/bin"
-    '';
-
   meta = {
-    homepage = http://xtrace.alioth.debian.org/;
+    homepage = "https://salsa.debian.org/debian/xtrace";
     description = "Tool to trace X11 protocol connections";
     license = stdenv.lib.licenses.gpl2;
     maintainers = with stdenv.lib.maintainers; [viric];
