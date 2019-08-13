@@ -119,11 +119,13 @@ stdenv.mkDerivation rec {
     install -c libs/captmon2/captmon2  $out/bin
     install -c libs/captemon/captmon*  $out/bin
 
-    ##FIXME: currently install x64 only, find the way to choose
-    install -c libs64/ccpd       $out/bin
-    install -c libs64/ccpdadmin  $out/bin
-    # install -c libs/ccpd       $out/bin
-    # install -c libs/ccpdadmin  $out/bin
+    ${if stdenv.hostPlatform.system == "x86_64-linux" then ''
+      install -c libs64/ccpd       $out/bin
+      install -c libs64/ccpdadmin  $out/bin
+    '' else ''
+      install -c libs/ccpd       $out/bin
+      install -c libs/ccpdadmin  $out/bin
+    ''}
 
     install -dm755 $out/etc
     install -c samples/ccpd.conf  $out/etc
