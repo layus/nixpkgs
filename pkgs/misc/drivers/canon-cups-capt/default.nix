@@ -8,8 +8,7 @@ let
   doc = callPackage ./doc.nix {};
 in
   stdenv.mkDerivation rec {
-    name = "${pname}-${version}";
-    pname = "capt-driverpack";
+    pname = "canon-capt-driverpack";
     version = "2.71";
 
     src = null;
