@@ -1,14 +1,16 @@
 {
-  stdenv, fetchzip,
+  multiStdenv, fetchzip,
+  autoPatchelfHook,
   autoconf,
   automake,
   glib,
   gnome2,
   libtool,
-  pkgconfig
+  pkgconfig,
+  pkgsi686Linux
 }:
 
-stdenv.mkDerivation rec {
+multiStdenv.mkDerivation rec {
   name = "${pname}-${version}";
   pname = "cndrvcups-common";
   version = "3.21";
@@ -27,14 +29,19 @@ stdenv.mkDerivation rec {
     sourceRoot=${name}
   '';
 
-  buildInputs = [
+  nativeBuildInputs = [
     autoconf
     automake
+    autoPatchelfHook
+  ];
+
+  buildInputs = with pkgsi686Linux; [
     glib
     gnome2.gtk
     gnome2.libglade
     libtool
     pkgconfig
+    multiStdenv.cc.cc # for libstdc++
   ];
 
   # install directions based on arch PKGBUILD file
@@ -121,7 +128,7 @@ stdenv.mkDerivation rec {
     install -c -m 644 data/*.ICC  $out/share/caepcm
   '';
 
-  meta = with stdenv.lib; {
+  meta = {
     description = "Canon CAPT driver - common module";
   };
 }

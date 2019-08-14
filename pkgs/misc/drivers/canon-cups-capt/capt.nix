@@ -1,16 +1,12 @@
-{
-  stdenv, fetchzip,
-  autoconf,
-  automake,
-  libtool,
-  glib,
-  gnome2,
-  pkgconfig,
-  libxml2,
-  cndrvcups-common
+{ multiStdenv
+, fetchzip
+, autoPatchelfHook
+, cndrvcups-common
+, pkgs
+, pkgsi686Linux
 }:
 
-stdenv.mkDerivation rec {
+multiStdenv.mkDerivation rec {
   name = "${pname}-${version}";
   pname = "cndrvcups-capt";
   version = "2.71";
@@ -31,22 +27,36 @@ stdenv.mkDerivation rec {
     sourceRoot=${name}
   '';
 
-  buildInputs = [
+  nativeBuildInputs = with pkgs; [
     autoconf
     automake
+    autoPatchelfHook
+    pkgconfig
+  ];
+
+  buildInputs = (with pkgs; [
+    cndrvcups-common
+    cups
+    ghostscript
     glib
+    gnome2.atk
     gnome2.gtk
     gnome2.libglade
     libtool
-    pkgconfig
-
-    cndrvcups-common
-  ];
+    libxml2
+    popt
+  ]) ++ (with pkgsi686Linux; [
+    libxml2
+    popt
+    multiStdenv.cc.cc # for libstdc++
+  ]);
 
   # install directions based on arch PKGBUILD file
   # https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=capt-src
 
   configurePhase = ''
+    runHook preConfigure
+
     for _dir in driver ppd backend pstocapt pstocapt2 pstocapt3
     do
         pushd $_dir
@@ -71,13 +81,13 @@ stdenv.mkDerivation rec {
       autoreconf -fi
       ./autogen.sh
     popd
-  '';
 
-  buildPhase = ''
-    make
+    runHook postConfigure
   '';
 
   installPhase = ''
+    runHook preInstall
+
     mkdir -p $out
 
     for _dir in driver ppd backend pstocapt pstocapt2 pstocapt3 statusui cngplp
@@ -119,7 +129,7 @@ stdenv.mkDerivation rec {
     install -c libs/captmon2/captmon2  $out/bin
     install -c libs/captemon/captmon*  $out/bin
 
-    ${if stdenv.hostPlatform.system == "x86_64-linux" then ''
+    ${if multiStdenv.hostPlatform.system == "x86_64-linux" then ''
       install -c libs64/ccpd       $out/bin
       install -c libs64/ccpdadmin  $out/bin
     '' else ''
@@ -150,9 +160,11 @@ stdenv.mkDerivation rec {
     install -c -m 644 data/C*   $out/share/caepcm
     install -dm755 $out/share/doc/capt-src
     install -c -m 644 *capt*.txt $out/share/doc/capt-src
+
+    runHook postInstall
   '';
 
-  meta = with stdenv.lib; {
+  meta = {
     description = "Canon CAPT driver - capt module";
   };
 }
