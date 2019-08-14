@@ -1944,9 +1944,9 @@ in
     enableExtraPlugins = true;
   });
 
-  asciidoctor = callPackage ../tools/typesetting/asciidoctor { 
+  asciidoctor = callPackage ../tools/typesetting/asciidoctor {
     # kindlegen is unfree, don't enable by default
-    kindlegen = null; 
+    kindlegen = null;
     # epubcheck pulls in Java, which is problematic on some platforms
     epubcheck = null;
   };
@@ -23853,6 +23853,8 @@ in
   canon-cups-ufr2 = callPackage ../misc/cups/drivers/canon { };
 
   canon-cups-capt = callPackage ../misc/drivers/canon-cups-capt { };
+  cndrvcups-common = callPackage ../misc/drivers/canon-cups-capt/common.nix { };
+  cndrvcups-capt = callPackage ../misc/drivers/canon-cups-capt/capt.nix { };
 
   hll2390dw-cups = callPackage ../misc/cups/drivers/hll2390dw-cups { };
 
