@@ -51,10 +51,12 @@ in runCommand "canon-capt-driverpack" {
     mkdir -p $out/bin
     function _redirect() {
       local target=$1 name=$(basename "$1")
-      cat >$out/bin/$name <<EOF
-    #! ${stdenv.shell} -e
-    exec ${fhsEnvExecutable} "$name" "$@"
-    EOF
+      cat >$out/bin/$name <<EOF ${''
+        ${/* line intentionally left blank */ ""}
+        #! ${stdenv.shell} -e
+        exec ${fhsEnvExecutable} "$name" "$@"
+        EOF
+      ''}
       chmod +x $out/bin/$name
     }
     for target in ${common}/bin/* ${capt}/bin/* ; do
@@ -64,20 +66,22 @@ in runCommand "canon-capt-driverpack" {
     mkdir -p $out/share
     ln -sn ${capt}/share/cups $out/share/cups
 
-    mkdir -p $out/lib/system/systemd
-    cat > $out/lib/system/systemd/ccpd.service <<EOF
-    # original : https://aur.archlinux.org/cgit/aur.git/plain/ccpd.service?h=capt-src
+    mkdir -p $out/lib/systemd/system
+    cat > $out/lib/systemd/system/ccpd.service <<EOF ${''
+      ${/* line intentionally left blank */ ""}
+      # original : https://aur.archlinux.org/cgit/aur.git/plain/ccpd.service?h=capt-src
 
-    [Unit]
-    Description=Canon CAPT daemon
-    Requires=org.cups.cupsd.service
-    After=org.cups.cupsd.service
+      [Unit]
+      Description=Canon CAPT daemon
+      Requires=cups.service
+      After=cups.service
 
-    [Service]
-    Type=forking
-    ExecStart=/usr/bin/ccpd
+      [Service]
+      Type=forking
+      ExecStart=$out/bin/ccpd
 
-    [Install]
-    WantedBy=printer.target
-    EOF
+      [Install]
+      WantedBy=printer.target
+      EOF
+    ''}
   ''
