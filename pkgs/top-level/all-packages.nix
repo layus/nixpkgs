@@ -24130,6 +24130,10 @@ in
 
   canon-cups-ufr2 = callPackage ../misc/cups/drivers/canon { };
 
+  canon-cups-capt = callPackage ../misc/drivers/canon-cups-capt { };
+  cndrvcups-common = callPackage ../misc/drivers/canon-cups-capt/common.nix { };
+  cndrvcups-capt = callPackage ../misc/drivers/canon-cups-capt/capt.nix { };
+
   hll2390dw-cups = callPackage ../misc/cups/drivers/hll2390dw-cups { };
 
   mfcj470dw-cupswrapper = callPackage ../misc/cups/drivers/mfcj470dwcupswrapper { };
