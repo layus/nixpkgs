@@ -2,6 +2,7 @@
 , fetchzip
 , autoPatchelfHook
 , cndrvcups-common
+, ghostscript
 , pkgs
 , pkgsi686Linux
 }:
@@ -37,7 +38,6 @@ multiStdenv.mkDerivation rec {
   buildInputs = (with pkgs; [
     cndrvcups-common
     cups
-    ghostscript
     glib
     gnome2.atk
     gnome2.gtk
@@ -160,6 +160,8 @@ multiStdenv.mkDerivation rec {
     install -c -m 644 data/C*   $out/share/caepcm
     install -dm755 $out/share/doc/capt-src
     install -c -m 644 *capt*.txt $out/share/doc/capt-src
+
+    ln -s ${ghostscript}/bin/gs $out/bin
 
     runHook postInstall
   '';
