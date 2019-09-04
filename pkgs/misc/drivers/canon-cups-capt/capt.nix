@@ -17,7 +17,7 @@ multiStdenv.mkDerivation rec {
     sha256 = "0agpai89vvqmjkkkk2gpmxmphmdjhiq159b96r9gybvd1c1l0dds";
   };
 
-  patches = [ ./0001-patch-missing-include.patch ];
+  patches = [ ./0001-patch-missing-include.patch ./debug.patch ];
 
   unpackPhase = ''
     mkdir -p ${name}
@@ -164,6 +164,13 @@ multiStdenv.mkDerivation rec {
     ln -s ${ghostscript}/bin/gs $out/bin
 
     runHook postInstall
+  '';
+
+  # They really want to use /usr/bin/captmon*,
+  # and we really want to use $out/bin/captmon*.
+  preFixup = ''
+    sed -i $out/share/cups/model/*.ppd \
+      -e "/opbidiPlugin/ s#captmon#../..$out/bin/captmon#"
   '';
 
   meta = {

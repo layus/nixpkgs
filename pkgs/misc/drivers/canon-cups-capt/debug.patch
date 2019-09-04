@@ -1,0 +1,91 @@
+--- cndrvcups-capt-2.71/backend/ccp.c	2017-04-18 09:23:04.000000000 +0200
++++ cndrvcups-capt-2.71/backend/ccp.c.new	2019-08-27 23:42:31.239642769 +0200
+@@ -389,26 +389,33 @@
+ 	int ofd = -1;
+ 	int i = 0;
+ 
+-	if ( ( buf_tool_w == NULL ) || ( buf_tool_r == NULL ) )
++	if ( ( buf_tool_w == NULL ) || ( buf_tool_r == NULL ) ) {
++        fprintf(g_log_fp, "ERROR: send_data error at startup, exit\n");
+ 		goto error_exit;
++    }
+ 
+ 	pBufWrite = buftool_data( buf_tool_w );
+ 	pBufRead = buftool_data( buf_tool_r );
+ 	pBufInfo = buftool_data( buf_tool_info );
+ 
+ 	queue_name = getenv( "PRINTER" );
+-	if ( queue_name == NULL ) goto error_exit;
++	if ( queue_name == NULL ) {
++        fprintf(g_log_fp, "ERROR: send_data error, queue is null, exit\n");
++        goto error_exit;
++    }
+ 
+ 	while( !g_canceled )
+ 	{
+ 		read_bytes = read( ifd, pBufWrite + 8, DATA_BUF_SIZE - 8 );
+ 		if ( read_bytes == 0 )
+ 		{
++            fprintf(g_log_fp, "ERROR: send_data error, error reading bytes (res == 0), exit\n");
+ 			goto error_exit;
+ 		}
+ 		else if ( read_bytes < 0 )
+ 		{
+ 			if ( errno != EINTR ){
++                fprintf(g_log_fp, "ERROR: send_data error, error reading bytes (res < 0), exit\n");
+ 				goto error_exit;
+ 			}
+ 		}
+@@ -427,12 +434,14 @@
+ 
+ 	if ( g_canceled )
+ 	{
++        fprintf(g_log_fp, "ERROR: send_data error, just cancelled, exit\n");
+ 		goto error_exit;
+ 	}
+ 
+ 	if ( ofd == -1 )
+ 	{
+ 		perror("ERROR: Can't connect to CCPD");
++        fprintf(g_log_fp, "ERROR: send_data error, no ccpd connection, exit\n");
+ 		goto error_exit;
+ 	}
+ 
+@@ -468,12 +477,16 @@
+ 				case RETURN_CODE_ERR_NOQUEUE:
+ 				case RETURN_CODE_ERR_NOTHREAD:
+ 				default:
++                    fprintf(g_log_fp, "ERROR: send_data error, ccpd_return is weird, exit\n");
+ 					goto error_exit;
+ 					break;
+ 			}
+ 		}
+ 
+-		if ( err ) goto error_exit;
++		if ( err ) {
++            fprintf(g_log_fp, "ERROR: send_data error, plain error, exit\n");
++            goto error_exit;
++        }
+ 	}
+ 
+ 	while ( !g_canceled )
+@@ -508,6 +521,7 @@
+ 					case RETURN_CODE_ERR_NOQUEUE:
+ 					case RETURN_CODE_ERR_NOTHREAD:
+ 					default:
++                        fprintf(g_log_fp, "ERROR: send_data error, ccpd_return is weird, 2 , exit\n");
+ 						goto error_exit;
+ 						break;
+ 				}
+@@ -532,7 +546,10 @@
+ 
+ 		read_bytes = read( ifd, pBufWrite + 8, DATA_BUF_SIZE - 8 );
+ 
+-		if ( err ) goto error_exit;
++		if ( err ) {
++            fprintf(g_log_fp, "ERROR: send_data error, just a plain error , exit\n");
++            goto error_exit;
++        }
+ 	}
+ 
+ 	buftool_destroy( buf_tool_w );
