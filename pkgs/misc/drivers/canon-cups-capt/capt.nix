@@ -137,9 +137,6 @@ multiStdenv.mkDerivation rec {
       install -c libs/ccpdadmin  $out/bin
     ''}
 
-    install -dm755 $out/etc
-    install -c samples/ccpd.conf  $out/etc
-
     install -dm755 $out/share/ccpd
     install -c libs/ccpddata/CNA*L.BIN    $out/share/ccpd
     install -c libs/ccpddata/CNA*LS.BIN   $out/share/ccpd
@@ -161,16 +158,15 @@ multiStdenv.mkDerivation rec {
     install -dm755 $out/share/doc/capt-src
     install -c -m 644 *capt*.txt $out/share/doc/capt-src
 
-    ln -s ${ghostscript}/bin/gs $out/bin
+    cat >$out/bin/gs <<EOF
+    #!${multiStdenv.shell}
+    export LD_LIBRARY_PATH=$out/lib:${cndrvcups-common}/lib
+    export PATH=${cndrvcups-common}/bin:$out/bin:\$PATH
+    exec ${ghostscript}/bin/gs "\$@"
+    EOF
+    chmod +x $out/bin/gs
 
     runHook postInstall
-  '';
-
-  # They really want to use /usr/bin/captmon*,
-  # and we really want to use $out/bin/captmon*.
-  preFixup = ''
-    sed -i $out/share/cups/model/*.ppd \
-      -e "/opbidiPlugin/ s#captmon#../..$out/bin/captmon#"
   '';
 
   meta = {
