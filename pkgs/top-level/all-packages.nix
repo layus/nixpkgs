@@ -26730,8 +26730,6 @@ in
 
   robin-map = callPackage ../development/libraries/robin-map { };
 
-  robo3t = libsForQt5.callPackage ../applications/misc/robo3t { };
-
   rucksack = callPackage ../development/tools/rucksack { };
 
   sam-ba = callPackage ../tools/misc/sam-ba { };
