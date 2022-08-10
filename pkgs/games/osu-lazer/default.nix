@@ -28,6 +28,7 @@ buildDotnetModule rec {
 
   nativeBuildInputs = [ copyDesktopItems ];
 
+  dotnetDontRestoreTools = true;
   dotnetFlags = [
     "--runtime linux-x64"
   ];

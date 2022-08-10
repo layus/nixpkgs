@@ -52,6 +52,8 @@ buildDotnetModule rec {
   nugetDeps = ./deps.nix;
 
   projectFile = "src/EventStore.ClusterNode/EventStore.ClusterNode.csproj";
+  dotnetDontRestoreTools = true;
+  selfContainedBuild = null;
 
   doCheck = true;
   testProjectFile = "src/EventStore.Projections.Core.Tests/EventStore.Projections.Core.Tests.csproj";

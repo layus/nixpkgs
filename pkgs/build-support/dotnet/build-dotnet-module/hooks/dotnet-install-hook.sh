@@ -6,10 +6,12 @@ dotnetInstallHook() {
 
     runHook preInstall
 
-    if [ "${selfContainedBuild-}" ]; then
-        dotnetInstallFlags+=("--self-contained")
-    else
-        dotnetInstallFlags+=("--no-self-contained")
+    if [ -n "${selfContainedBuild+FOO}" ]; then
+        if [ "${selfContainedBuild-}" ]; then
+            dotnetInstallFlags+=("--self-contained")
+        else
+            dotnetInstallFlags+=("--no-self-contained")
+        fi
     fi
 
     for project in ${projectFile[@]}; do

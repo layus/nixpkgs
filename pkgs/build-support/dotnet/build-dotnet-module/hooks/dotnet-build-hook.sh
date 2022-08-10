@@ -14,10 +14,12 @@ dotnetBuildHook() {
         parallelBuildFlag="false"
     fi
 
-    if [ "${selfContainedBuild-}" ]; then
-        dotnetBuildFlags+=("--self-contained")
-    else
-        dotnetBuildFlags+=("--no-self-contained")
+    if [ -n "${selfContainedBuild+FOO}" ]; then
+        if [ "${selfContainedBuild-}" ]; then
+            dotnetBuildFlags+=("--self-contained")
+        else
+            dotnetBuildFlags+=("--no-self-contained")
+        fi
     fi
 
     if [ "${version-}" ]; then

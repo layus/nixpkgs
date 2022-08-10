@@ -19,6 +19,8 @@
 , dotnetPackFlags ? []
 # Flags to pass to dotnet in all phases.
 , dotnetFlags ? []
+# Whether to include tools in the pre-fetched dependencies.
+, dotnetDontRestoreTools ? false
 
 # The path to publish the project to. When unset, the directory "$out/lib/$pname" is used.
 , installPath ? null
@@ -55,7 +57,8 @@
 
 # The type of build to perform. This is passed to `dotnet` with the `--configuration` flag. Possible values are `Release`, `Debug`, etc.
 , buildType ? "Release"
-# If set to true, builds the application as a self-contained - removing the runtime dependency on dotnet
+# If set to true, builds the application as a self-contained - removing the runtime dependency on dotnet.
+# Use null if the dotnet version you need does not support the `--self-contained` (or `--no-self-contained`) flag.
 , selfContainedBuild ? false
 # The dotnet SDK to use.
 , dotnet-sdk ? dotnetCorePackages.sdk_6_0
@@ -135,6 +138,11 @@ in stdenvNoCC.mkDerivation (args // {
       export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
       mkdir -p "$HOME/nuget_pkgs"
+
+      ${lib.optionalString (!dotnetDontRestoreTools) ''
+        ${dotnet-sdk}/bin/dotnet tool restore \
+        mv $HOME/.nuget/packages/* $HOME/nuget_pkgs
+      ''}
 
       for project in "${lib.concatStringsSep "\" \"" ((lib.toList projectFile) ++ lib.optionals (testProjectFile != "") (lib.toList testProjectFile))}"; do
         ${dotnet-sdk}/bin/dotnet restore "$project" \

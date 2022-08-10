@@ -18,6 +18,7 @@ buildDotnetModule rec {
   nugetDeps = ./deps.nix;
 
   dotnetInstallFlags = [ "--framework net6.0" ];
+  dotnetDontRestoreTools = true;
 
   postPatch = ''
     # Relax the version requirement

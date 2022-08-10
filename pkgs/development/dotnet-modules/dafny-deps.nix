@@ -1,4 +1,6 @@
 { fetchNuGet }: [
+  (fetchNuGet { pname = "CocoR"; version = "2014.12.24"; sha256 = "0ps8h7aawkcc1910qnh13llzb01pvgsjmg862pxp0p4wca2dn7a2"; })
+  (fetchNuGet { pname = "dotnet-format"; version = "5.1.250801"; sha256 = "1i0icx2yyp9141rjb2a221a71fvsy0knrfyvv631vb56r8fnsywh"; })
   (fetchNuGet { pname = "Boogie.AbstractInterpretation"; version = "2.15.6"; sha256 = "0pdliiwc4185dm0skkafzz79njigyg5jq704mka928x51yrpl7mp"; })
   (fetchNuGet { pname = "Boogie.BaseTypes"; version = "2.15.6"; sha256 = "1mqibpc1d9vgi7lknys8l4jvl25h9n0h72msvjkdyr5n1821g00q"; })
   (fetchNuGet { pname = "Boogie.CodeContractsExtender"; version = "2.15.6"; sha256 = "1h6r1ak2c85gascfpi4k8cfgn2k95bd0racxg0m2mhcqnb9wc9rz"; })

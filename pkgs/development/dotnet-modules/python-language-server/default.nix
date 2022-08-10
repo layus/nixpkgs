@@ -21,6 +21,8 @@ buildDotnetModule rec {
 
   projectFile = "src/LanguageServer/Impl/Microsoft.Python.LanguageServer.csproj";
   nugetDeps = ./deps.nix;
+  selfContainedBuild = null;
+  dotnetDontRestoreTools = true;
 
   dotnet-sdk = dotnetCorePackages.sdk_3_1;
   dotnet-runtime = dotnetCorePackages.runtime_3_1;
