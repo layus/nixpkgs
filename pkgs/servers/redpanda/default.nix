@@ -12,7 +12,7 @@ let
     owner = "redpanda-data";
     repo = "redpanda";
     rev = "v${version}";
-    sha256 = "sha256-VvbyVAcNPe1UOEfX+HSY4OaOBS78YZuFgpIYo2s1kXo=";
+    hash = "sha256-oyPqXdnoh2i6EDa0IPowgXBlOk7mG8JYkXeb4XAxbm8=";
   };
   server = callPackage ./server.nix { inherit src version; };
 in
