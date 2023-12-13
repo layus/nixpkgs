@@ -12655,9 +12655,9 @@ with pkgs;
 
   redmine = callPackage ../applications/version-management/redmine { };
 
-  redpanda-client = callPackage ../servers/redpanda { };
-
-  redpanda-server = redpanda-client.server;
+  inherit (callPackages ../servers/redpanda { })
+    redpanda-client
+    redpanda-server;
 
   redsocks = callPackage ../tools/networking/redsocks { };
 

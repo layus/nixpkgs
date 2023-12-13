@@ -1,53 +1,125 @@
-{ buildGoModule
-, callPackage
-, doCheck ? !stdenv.isDarwin # Can't start localhost test server in MacOS sandbox.
+{ lib
+, newScope
+, overrideCC
 , fetchFromGitHub
-, installShellFiles
-, lib
-, stdenv
+, fetchgit
+  # dependencies
+, abseil-cpp_202206
+, avro-cpp
+, boost175
+, bzip2
+, fmt_8
+, gtest
+, icu
+, llvmPackages_16
+, lzma
+, protobuf_21
+, python3
+, python310
+, re2
+, yaml-cpp
+, zlib
+, zstd
+, cryptopp
+, liburing
 }:
-let
-  version = "23.2.17";
-  src = fetchFromGitHub {
+
+lib.makeScope newScope (self: let inherit (self) callPackage; in {
+
+  redpanda_version = "23.2.17";
+  # see redpanda/cmake/dependencies.cmake
+  seastar_version = "23.2.x";
+  # 23.2.x is a branch; in nix we have to pin to a particular commit
+  seastar_ref = "1e2ad26ac57c1130190f3f41237af0907aab17d8";
+
+  redpanda-client = callPackage ./redpanda.nix { };
+
+  redpanda-server = callPackage ./server.nix { };
+
+  llvmPackages = llvmPackages_16;
+
+  redpanda_src = fetchFromGitHub {
     owner = "redpanda-data";
     repo = "redpanda";
-    rev = "v${version}";
+    rev = "v${self.redpanda_version}";
     hash = "sha256-oyPqXdnoh2i6EDa0IPowgXBlOk7mG8JYkXeb4XAxbm8=";
   };
-  server = callPackage ./server.nix { inherit src version; };
-in
-buildGoModule rec {
-  pname = "redpanda-rpk";
-  inherit doCheck src version;
-  modRoot = "./src/go/rpk";
-  runVend = false;
-  vendorHash = "sha256-mLMMw48d1FOvIIjDNza0rZSWP55lP1AItR/hT3lYXDg=";
 
-  ldflags = [
-    ''-X "github.com/redpanda-data/redpanda/src/go/rpk/pkg/cli/cmd/version.version=${version}"''
-    ''-X "github.com/redpanda-data/redpanda/src/go/rpk/pkg/cli/cmd/version.rev=v${version}"''
-    ''-X "github.com/redpanda-data/redpanda/src/go/rpk/pkg/cli/cmd/container/common.tag=v${version}"''
-  ];
+  seastar = callPackage ./seastar.nix { };
 
-  nativeBuildInputs = [ installShellFiles ];
+  stdenv = self.llvmPackages.libcxxStdenv;
+  #stdenv = overrideCC self.llvmPackages.libcxxStdenv (
+  #  self.llvmPackages.libcxxStdenv.cc.override {
+  #    inherit (self.llvmPackages) bintools;
+  #  }
+  #);
 
-  postInstall = ''
-    for shell in bash fish zsh; do
-      $out/bin/rpk generate shell-completion $shell > rpk.$shell
-      installShellCompletion rpk.$shell
-    done
-  '';
-
-  passthru = {
-    inherit server;
+  boost = boost175.override {
+    inherit (self) stdenv;
+    enablePython = true;
+    # Build fails with python 3.11, should be fixed in more recent boost versions
+    python = python310.withPackages (ps: [ ps.jinja2 ]);
   };
 
-  meta = with lib; {
-    description = "Redpanda client";
-    homepage = "https://redpanda.com/";
-    license = licenses.bsl11;
-    maintainers = with maintainers; [ avakhrenev happysalada ];
-    platforms = platforms.all;
-    mainProgram = "rpk";
+  base64 = callPackage ./base64.nix { };
+
+  hdr-histogram = callPackage ./hdr-histogram.nix { };
+
+  avro-cpp = (avro-cpp.override { inherit (self) stdenv boost; }).overrideAttrs (oldAttrs: {
+    buildInputs = oldAttrs.buildInputs or [] ++ [ zlib icu bzip2 lzma zstd ];
+  }); #callPackage ./avro-cpp.nix { };
+
+  abseil-cpp = abseil-cpp_202206.override { inherit (self) stdenv; };
+  yaml-cpp = yaml-cpp.override { inherit (self) stdenv; };
+  fmt_8 = fmt_8.override { inherit (self) stdenv; };
+  cryptopp = cryptopp.override { inherit (self) stdenv; };
+
+
+  re2 = (re2.override {
+    inherit (self) stdenv;
+  }).overrideAttrs (oldAttrs: rec {
+    # re2 needs to be < 2023-06-01
+    version = "2023-03-01";
+    src = fetchFromGitHub {
+      owner = "google";
+      repo = "re2";
+      rev = version;
+      hash = "sha256-T+P7qT8x5dXkLZAL8VjvqPD345sa6ALX1f5rflE0dwc=";
+    };
+  });
+
+  protobuf = protobuf_21.override { inherit (self) stdenv abseil-cpp gtest; };
+  gtest = gtest.override { inherit (self) stdenv; };
+
+# c-ares
+# gnutls
+# hwloc
+# libsystemtap
+# libtasn1
+liburing = (liburing.override { inherit (self) stdenv; }).overrideAttrs (oldAttrs: rec {
+  pname = "liburing";
+  version = "2.2";
+
+  src = fetchgit {
+    url    = "http://git.kernel.dk/${pname}";
+    rev    = "liburing-${version}";
+    sha256 = "sha256-M/jfxZ+5DmFvlAt8sbXrjBTPf2gLd9UyTNymtjD+55g=";
   };
-}
+});
+# libxfs
+# lksctp-tools
+# lz4
+# numactl
+# openssl
+# pkg-config
+# python3
+# ragel
+# valgrind
+
+  kafka-codegen-venv = python3.withPackages (ps: [
+    ps.jinja2
+    ps.jsonschema
+  ]);
+
+  rapidjson = callPackage ./rapidjson.nix { };
+})

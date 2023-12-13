@@ -1,8 +1,8 @@
 { stdenv
-, abseil-cpp_202206
+, abseil-cpp
 , avro-cpp
+, base64
 , boost
-, callPackage
 , ccache
 , cmake
 , crc32c
@@ -11,55 +11,56 @@
 , curl
 , dpdk
 , git
+, hdr-histogram
+, kafka-codegen-venv
 , lib
-, libpthreadstubs
-, llvmPackages_15
 , libxml2
+, llvmPackages
 , ninja
 , p11-kit
 , pkg-config
 , procps
-, protobuf_21
+, protobuf
 , python3
+, rapidjson
 , re2
+, redpanda_src
+, redpanda_version
+, seastar
+, seastar_ref
 , snappy
-, src
 , unzip
-, version
+, valgrind
 , writeShellScriptBin
 , xxHash
 , zip
 , zstd
 }:
-let
-  pname = "redpanda";
-  pythonPackages = p: with p; [ jinja2 ];
-  seastar = callPackage ./seastar.nix { };
-  base64 = callPackage ./base64.nix { };
-  hdr-histogram = callPackage ./hdr-histogram.nix { };
-  kafka-codegen-venv = python3.withPackages (ps: [
-    ps.jinja2
-    ps.jsonschema
-  ]);
-  rapidjson = callPackage ./rapidjson.nix { };
-  boost' = boost.override {
-    enablePython = true;
-    python = python3.withPackages pythonPackages;
-  };
-in
-llvmPackages_15.stdenv.mkDerivation rec {
-  inherit pname version src;
+
+stdenv.mkDerivation rec {
+  pname = "redpanda-server";
+  version = redpanda_version;
+  src = redpanda_src;
+
+  postUnpack = ''
+    if ! grep -r . "${seastar_ref}"; then
+      fail "Seastar ref must align with redpanda sources"
+    fi
+  '';
 
   preConfigure = ''
     # setup sccache
     export CCACHE_DIR=$TMPDIR/sccache-redpanda
     mkdir -p $CCACHE_DIR
   '';
-  patches = [
-    ./redpanda.patch
-    ./typename.patch
-    ./missing_includes.patch
-  ];
+
+  shellHook = ''
+    # To ensure that shells use the same ccache cache
+    export TMPDIR=/tmp
+  '';
+
+  patches = [ ./redpanda.patch ];
+
   postPatch = ''
     # Fix 'error: use of undeclared identifier 'roaring'; did you mean 'Roaring
     #      qualified reference to 'Roaring' is a constructor name rather than a type in this context'
@@ -77,13 +78,13 @@ llvmPackages_15.stdenv.mkDerivation rec {
   doCheck = false;
 
   nativeBuildInputs = [
-    (python3.withPackages pythonPackages)
+    (python3.withPackages (ps: [ ps.jinja2 ]))
     (writeShellScriptBin "kafka-codegen-venv" "exec -a $0 ${kafka-codegen-venv}/bin/python3 $@")
     ccache
     cmake
     curl
     git
-    llvmPackages_15.llvm
+    llvmPackages.llvm
     ninja
     pkg-config
     procps
@@ -98,29 +99,13 @@ llvmPackages_15.stdenv.mkDerivation rec {
     "-Wno-dev"
     "-DGIT_VER=${version}"
     "-DGIT_CLEAN_DIRTY=\"\""
-
-    # fixing 'no member named nullopt in namespace std'
-    # "-DCMAKE_CXX_FLAGS=-std=c++20"
-    # "-DBASE_CXX_FLAG_LIST=-stdlib=libc++"
-    # "-DCMAKE_EXE_LINKER_FLAGS='-lpthread -lc++ -lc++abi' "
   ];
-  # preConfigure = ''
-    # not sure how to give this argument multiple flags in `cmakeFlags`
-    # cmakeFlagsArray+=(-DCMAKE_EXE_LINKER_FLAGS="-Wl,-lpthread -Wl,-lc++ -Wl,-lc++abi")
-  # '';
-
-
-  # SEE: https://github.com/NixOS/nixpkgs/issues/12857
-  # NIX_LDFLAGS="-lpthread -L${libpthreadstubs}/lib";
 
   buildInputs = [
-    # boost
-    # libpthreadstubs
-    abseil-cpp_202206
+    abseil-cpp
     avro-cpp
     base64
-    # boost'
-    # boost.dev
+    boost
     crc32c
     croaring
     ctre
@@ -128,17 +113,17 @@ llvmPackages_15.stdenv.mkDerivation rec {
     hdr-histogram
     libxml2
     p11-kit
-    protobuf_21
+    protobuf
     rapidjson
     re2
     seastar
     snappy
+    valgrind
     xxHash
     zstd
   ];
 
   meta = with lib; {
-    # broken = true;
     description = "Kafka-compatible streaming platform.";
     license = licenses.gpl3;
     longDescription = ''

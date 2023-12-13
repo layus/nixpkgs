@@ -1,4 +1,4 @@
-{ boost175
+{ boost
 , c-ares
 , cmake
 , cryptopp
@@ -12,7 +12,7 @@
 , liburing
 , libxfs
 , lksctp-tools
-, llvmPackages_15
+, llvmPackages
 , lz4
 , ninja
 , numactl
@@ -20,24 +20,24 @@
 , pkg-config
 , python3
 , ragel
+, seastar_version
+, seastar_ref
 , valgrind
 , yaml-cpp
 }:
-let
+
+llvmPackages.libcxxStdenv.mkDerivation {
   pname = "seastar";
-  # see redpanda/cmake/dependencies.cmake
-  version = "1e2ad26ac57c1130190f3f41237af0907aab17d8";
-in
-llvmPackages_15.stdenv.mkDerivation {
-  inherit pname version;
-  strictDeps = true;
+  version = seastar_version;
   src = fetchFromGitHub {
     owner = "redpanda-data";
     repo = "seastar";
-    # 23.3.x is a branch; in nix we have to pin to a particular commit
-    rev = version; # "7ca1eaebf1fffed2858cec92b74aea1415c73913";
+    rev = seastar_ref;
     sha256 = "sha256-nGDw9FwasVfHc1RuBH29SR17x5uNS0CbBsDwOdUvH0s=";
   };
+
+  strictDeps = true;
+
   nativeBuildInputs = [
     cmake
     ninja
@@ -46,12 +46,14 @@ llvmPackages_15.stdenv.mkDerivation {
     python3
     ragel
   ];
+
   buildInputs = [
     libsystemtap
     libxfs
   ];
+
   propagatedBuildInputs = [
-    boost175
+    boost
     c-ares
     gnutls
     cryptopp
@@ -65,12 +67,11 @@ llvmPackages_15.stdenv.mkDerivation {
     valgrind
     yaml-cpp
   ];
-  # patches = [
-  #   ./seastar-fixes.patch
-  # ];
+
   postPatch = ''
     patchShebangs ./scripts/seastar-json2code.py
   '';
+
   cmakeFlags = [
     "-DSeastar_EXCLUDE_DEMOS_FROM_ALL=ON"
     "-DSeastar_EXCLUDE_TESTS_FROM_ALL=ON"
@@ -87,7 +88,9 @@ llvmPackages_15.stdenv.mkDerivation {
     "-DSeastar_CXX_DIALECT=c++20"
     # "-DSeastar_UNUSED_RESULT_ERROR=ON"
   ];
+
   doCheck = false;
+
   meta = with lib; {
     description = "High performance server-side application framework.";
     license = licenses.asl20;
