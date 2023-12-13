@@ -43,8 +43,9 @@ stdenv.mkDerivation rec {
   src = redpanda_src;
 
   postUnpack = ''
-    if ! grep -r . "${seastar_ref}"; then
-      fail "Seastar ref must align with redpanda sources"
+    if ! grep "${seastar_ref}" -r ; then
+      echo "Seastar ref must align with redpanda sources"
+      exit 1
     fi
   '';
 
