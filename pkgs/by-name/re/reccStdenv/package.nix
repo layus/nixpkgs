@@ -102,7 +102,18 @@ let
     # Rather than trying to capture or detect that, filter it out here, every
     # time: keep only /nix/store/* entries, which is exactly what a real
     # sandboxed build's $PATH already consists of, so this is a no-op there.
-    PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep '^/nix/store/' | paste -sd: -)"
+    #
+    # One /nix/store/* entry still needs its own exclusion: a truly
+    # interactive `nix develop` (no -c) runs bashInteractive instead of plain
+    # bash, so its own store path is on PATH purely because of *which* mode
+    # was used to reach this compile, not because of anything a real build
+    # ever has — drop it too, so it can never survive into the actual action.
+    PATH="$(
+      printf '%s' "$PATH" | tr ':' '\n' \
+        | grep '^/nix/store/' \
+        | grep -v -- '-bash-interactive-[^/]*/bin$' \
+        | paste -sd: -
+    )"
 
     # recc also always forwards LANG and LD_LIBRARY_PATH when they're set,
     # independent of RECC_ENV_TO_READ/RECC_PRESERVE_ENV. A sandboxed build
