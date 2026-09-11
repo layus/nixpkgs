@@ -47,6 +47,15 @@ let
   # ── Runtime smoke test (recursive-nix gated) ─────────────────────────────
   # Actually adds the hook to a build, lets it start the nixception server,
   # routes one trivial C compile through it via `recc` and checks result.
+  #
+  # There is no automated equivalent here for `nix develop` / `nix-shell`
+  # (shell mode, see nixception-setup-hook.sh): nesting a real `nix develop`
+  # invocation inside a sandboxed derivation to exercise it is fragile and
+  # non-standard for this tree. Verify shell mode manually instead:
+  #   nix develop <drv-with-nixceptionHook-or-reccStdenv-in-nativeBuildInputs>
+  #   # -> "nixception-hook: server ready on 127.0.0.1:50051 (pid …)"
+  #   recc gcc -c -O2 -o t.o t.c   # RECC_VERBOSE=1 shows "Executing action remotely"
+  #   exit                         # -> server process gone (EXIT trap)
   smoke-test = stdenv.mkDerivation {
     name = "nixception-hook-smoke-test";
     dontUnpack = true;

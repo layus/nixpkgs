@@ -1,7 +1,13 @@
 # Setup hook for the nixception package.
 # ======================================
 #
-# It registers one extra phase: nixceptionStartPhase, registered via
+# Two lifecycles, because stdenv's phase/hook machinery (preConfigurePhases,
+# exitHook, failureHook) only exists inside genericBuild — nix-shell / nix
+# develop never call it, they just source the setup hooks and run $shellHook.
+#
+# ── In a real build ───────────────────────────────────────────────────────
+#
+# Registers one extra phase: nixceptionStartPhase, registered via
 # preConfigurePhases; starts the nixception server and waits until it is ready
 # to accept connections on 127.0.0.1:50051.  The server is stopped by hooking
 # into stdenv's failureHook and exitHook, which are called by exitHandler (the
@@ -12,6 +18,22 @@
 # When the compiler is wrapped by recc, the nixception server must already be
 # listening or those probes will fail with connection-refused errors.
 #
+# It requires the recursive-nix system feature: the server talks to the Nix
+# daemon socket the sandbox exposes at /build/.nix-socket.
+#
+# ── In `nix develop` / `nix-shell` ──────────────────────────────────────────
+#
+# Appends to $shellHook instead: starts the server the same way, but against
+# the ambient host Nix daemon (there is no /build/.nix-socket outside a
+# sandboxed build, and none is needed — the daemon a plain `nix build` would
+# use is enough). A background watchdog stops the server when the shell
+# exits — see _nixceptionShellStart below for why (not a trap: exitHook /
+# failureHook don't exist outside genericBuild, and a plain `trap ... EXIT`
+# doesn't survive `nix develop -c`). Also strips the "/no-such-path" sentinel
+# `nix develop` appends when it builds $PATH from scratch, so $PATH here
+# matches what a real sandboxed build would see. Detected via $IN_NIX_SHELL,
+# which nix-shell/nix develop set.
+#
 # ── Verbosity ────────────────────────────────────────────────────────────────
 #
 # By default the hook runs in quiet mode: the nixception server's output is
@@ -19,9 +41,10 @@
 # NIXCEPTION_VERBOSE=1 in the build environment to get all the debug messages
 #
 # On build *failure* the server log is always dumped to stderr regardless of
-# the verbosity setting, so you can still debug without re-running.
+# the verbosity setting, so you can still debug without re-running. (In shell
+# mode there is no failure to detect, so this only applies to real builds.)
 #
-# ── Shutdown ─────────────────────────────────────────────────────────────────
+# ── Shutdown (build mode) ────────────────────────────────────────────────────
 #
 # stdenv's exitHandler (set as the EXIT trap before any setup hook runs) calls:
 #   runHook failureHook   – on non-zero exit
@@ -34,7 +57,8 @@
 #
 # To make extra tools available inside the reapi-action sandbox, export
 # NIXCEPTION_EXTRA_SANDBOX_PATHS (colon-separated /nix/store/… paths) in the
-# build environment *before* this phase runs.
+# build environment *before* this phase runs (build mode), or before entering
+# the shell (shell mode).
 
 # shellcheck shell=bash
 
@@ -85,25 +109,21 @@ _nixceptionCleanStop() {
     rm -f "$_nixception_logfile"
 }
 
-nixceptionStartPhase() {
-    # ── Sanity-check: recursive-nix socket ───────────────────────────────────
-    # The Nix daemon socket is exposed at /build/.nix-socket when the sandbox
-    # is started with the recursive-nix system feature.  Fail fast so the
-    # error is obvious rather than a cryptic connection-refused from nixception.
-    test -S /build/.nix-socket || {
-        echo "nixception-hook: FAIL: recursive-nix daemon socket not found" \
-            '– is requiredSystemFeatures = ["recursive-nix"] set?' >&2
-        exit 1
-    }
-
+# Start the nixception server in the background, wait until it accepts
+# connections on 127.0.0.1:50051, and set $_nixception_pid / $_nixception_logfile
+# / $NIXCEPTION_STATS_FILE. Shared by build mode (nixceptionStartPhase) and
+# shell mode (_nixceptionShellStart) — everything about the server itself
+# (verbosity, log file, stats file, readiness wait) is identical between them;
+# only what surrounds it (the daemon-socket check, how it's torn down) differs.
+_nixceptionLaunch() {
     local _verbose="${NIXCEPTION_VERBOSE:-0}"
 
     # Stats file
     export NIXCEPTION_STATS_FILE
-    NIXCEPTION_STATS_FILE="$(mktemp -p /build nixception-stats.XXXXXX)"
+    NIXCEPTION_STATS_FILE="$(mktemp -t nixception-stats.XXXXXX)"
 
     # Server log file (used in quiet mode)
-    _nixception_logfile="$(mktemp -p /build nixception-server.log.XXXXXX)"
+    _nixception_logfile="$(mktemp -t nixception-server.log.XXXXXX)"
 
     # Verbosiy
     # In verbose mode the default RUST_LOG level is "info" and server output is
@@ -134,13 +154,73 @@ nixceptionStartPhase() {
     fi
     _nixception_pid=$!
 
-    # Register exit hooks
-    exitHook+=$'\n_nixceptionCleanStop\n'
-    failureHook+=$'\n_nixceptionFailStop\n'
-
     # Wait for the server to be ready
     @wait4x@/bin/wait4x tcp 127.0.0.1:50051 --timeout 30s --quiet
     _nixception_log "server is ready (pid $_nixception_pid)"
 }
 
-preConfigurePhases="${preConfigurePhases:-} nixceptionStartPhase"
+nixceptionStartPhase() {
+    # ── Sanity-check: recursive-nix socket ───────────────────────────────────
+    # The Nix daemon socket is exposed at /build/.nix-socket when the sandbox
+    # is started with the recursive-nix system feature.  Fail fast so the
+    # error is obvious rather than a cryptic connection-refused from nixception.
+    test -S /build/.nix-socket || {
+        echo "nixception-hook: FAIL: recursive-nix daemon socket not found" \
+            '– is requiredSystemFeatures = ["recursive-nix"] set?' >&2
+        exit 1
+    }
+
+    _nixceptionLaunch
+
+    # Register exit hooks
+    exitHook+=$'\n_nixceptionCleanStop\n'
+    failureHook+=$'\n_nixceptionFailStop\n'
+}
+
+# ── Shell mode ───────────────────────────────────────────────────────────────
+# No genericBuild here, so no preConfigurePhases / exitHook / failureHook — and
+# no reliable EXIT trap either: `nix develop -c CMD` sources this shellHook and
+# then execs CMD *in the same shell process* (same PID, new process image), so
+# a trap set here is simply gone — exec never returns to run it. (A plain
+# interactive `nix develop`, with no -c, is the one case where that shell truly
+# exits and a trap would fire — but relying on two different mechanisms for the
+# two invocation styles is exactly the kind of thing that quietly breaks again.)
+#
+# So: no /build/.nix-socket check (outside a sandboxed build there's no such
+# thing, and none is needed — the server just talks to whatever Nix daemon
+# `nix build` would use), and instead of a trap, a tiny watchdog forked
+# alongside the server. `exec` preserves the PID, so the server's direct parent
+# stays *this* shell for as long as it's alive, under any exec chain; the
+# watchdog polls that PID and kills the server the moment it's gone — covering
+# -c, --command, and plain interactive shells uniformly. `disown` both so an
+# interactive shell's job control doesn't warn "There are running jobs" on exit.
+_nixceptionShellStart() {
+    local _shell_pid=$$
+
+    # `nix develop` (with or without --ignore-env) builds $PATH from scratch
+    # and appends a "/no-such-path" sentinel entry when doing so. A real
+    # sandboxed build never has it, so anything that hashes or forwards $PATH
+    # verbatim — recc's action digest included — sees a different value
+    # between the two. Not specific to nixception; strip it so consumers of
+    # this shell (recc via reccStdenv, or anyone else) see the same PATH a
+    # real build would.
+    PATH="${PATH%:/no-such-path}"
+
+    _nixceptionLaunch
+    disown "$_nixception_pid" 2>/dev/null || true
+    echo "nixception-hook: server ready on 127.0.0.1:50051 (pid $_nixception_pid)" >&2
+
+    (
+        while kill -0 "$_shell_pid" 2>/dev/null; do
+            sleep 1
+        done
+        _nixceptionCleanStop
+    ) &
+    disown "$!" 2>/dev/null || true
+}
+
+if [ -n "${IN_NIX_SHELL:-}" ]; then
+    shellHook+=$'\n_nixceptionShellStart\n'
+else
+    preConfigurePhases="${preConfigurePhases:-} nixceptionStartPhase"
+fi
