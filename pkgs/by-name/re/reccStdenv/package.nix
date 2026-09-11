@@ -118,10 +118,31 @@ let
   # are cached in the shared Nix store.  Requires `recursive-nix`
   # (experimental-features + system-features in nix.conf); otherwise pure — the
   # nixception package is fetched from a released tag — so no `--impure`.
+  #
+  # NIX_OUTPATH_USED_AS_RANDOM_SEED pins every -frandom-seed the
+  # reproducible-builds setup hook bakes into NIX_CFLAGS_COMPILE to a fixed
+  # constant, instead of nixpkgs' default (the last 10 chars of $out).  $out
+  # differs between a real `nix build` and the synthetic shell-env derivation
+  # `nix develop` builds for the same package, so the default would make an
+  # otherwise byte-identical compile — the whole point of routing it through
+  # nixception — hash to two different REAPI actions depending on which one
+  # produced it, permanently defeating the cache across that boundary.  A
+  # fixed seed keeps every reccStdenv build reproducible in exactly the same
+  # (weaker) sense ccache/sccache already accept: symbol names are stable
+  # across builds, not diversified per output the way plain nixpkgs prefers.
   base = lib.lowPrio (
     stdenvAdapters.overrideMkDerivationArgs (args: {
       nativeBuildInputs = (args.nativeBuildInputs or [ ]) ++ [ nixceptionHook ];
       requiredSystemFeatures = (args.requiredSystemFeatures or [ ]) ++ [ "recursive-nix" ];
+      # Every reccStdenv derivation is __structuredAttrs (below), where
+      # mkDerivation's own convention is that env vars belong under `env`, not
+      # as bare top-level attrs — merge into args.env (rather than a bare
+      # NIX_OUTPATH_USED_AS_RANDOM_SEED = "…";) so this follows that
+      # convention and composes with whatever the consuming derivation itself
+      # already puts in `env`, instead of silently overwriting it.
+      env = (args.env or { }) // {
+        NIX_OUTPATH_USED_AS_RANDOM_SEED = args.env.NIX_OUTPATH_USED_AS_RANDOM_SEED or "0000000000";
+      };
     }) (overrideCC stdenv reccWrapper)
   );
 
