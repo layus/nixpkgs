@@ -90,6 +90,20 @@ let
     export RECC_ACTION_CACHE_SERVER="''${RECC_ACTION_CACHE_SERVER:-$RECC_SERVER}"
     export RECC_INSTANCE="''${RECC_INSTANCE:-main}"
 
+    # recc uploads $PATH verbatim as part of every remote action, so it must
+    # match what a real sandboxed build would see for the cache to cross the
+    # nix-build / nix-develop boundary. A sandboxed build's $PATH is entirely
+    # /nix/store/*/bin entries; an interactive `nix develop` session can pick
+    # up extra, non-store entries afterwards (e.g. on NixOS, /etc/profile's
+    # system-wide PATH: /run/wrappers/bin, ~/.nix-profile/bin,
+    # /run/current-system/sw/bin, …) that a plain env-var snapshot taken in
+    # shellHook can't reliably survive — some shell integration (direnv, a
+    # prompt hook, …) can still clobber it before this wrapper ever runs.
+    # Rather than trying to capture or detect that, filter it out here, every
+    # time: keep only /nix/store/* entries, which is exactly what a real
+    # sandboxed build's $PATH already consists of, so this is a no-op there.
+    PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep '^/nix/store/' | paste -sd: -)"
+
     # RECC_PROJECT_ROOT is the top-level source dir: recc uploads every
     # input path inside it and reconstructs each remote output at
     #   RECC_PROJECT_ROOT / <action working_directory> / <output_path>.

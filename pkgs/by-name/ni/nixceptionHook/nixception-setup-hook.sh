@@ -29,10 +29,11 @@
 # use is enough). A background watchdog stops the server when the shell
 # exits — see _nixceptionShellStart below for why (not a trap: exitHook /
 # failureHook don't exist outside genericBuild, and a plain `trap ... EXIT`
-# doesn't survive `nix develop -c`). Also strips the "/no-such-path" sentinel
-# `nix develop` appends when it builds $PATH from scratch, so $PATH here
-# matches what a real sandboxed build would see. Detected via $IN_NIX_SHELL,
-# which nix-shell/nix develop set.
+# doesn't survive `nix develop -c`). Detected via $IN_NIX_SHELL, which
+# nix-shell/nix develop set. (PATH contamination in this mode — a
+# "/no-such-path" sentinel from `nix develop`'s own PATH construction, or a
+# whole system/user profile some systems append when starting the interactive
+# shell afterwards — is not handled here; see reccStdenv's compiler wrapper.)
 #
 # ── Verbosity ────────────────────────────────────────────────────────────────
 #
@@ -197,14 +198,16 @@ nixceptionStartPhase() {
 _nixceptionShellStart() {
     local _shell_pid=$$
 
-    # `nix develop` (with or without --ignore-env) builds $PATH from scratch
-    # and appends a "/no-such-path" sentinel entry when doing so. A real
-    # sandboxed build never has it, so anything that hashes or forwards $PATH
-    # verbatim — recc's action digest included — sees a different value
-    # between the two. Not specific to nixception; strip it so consumers of
-    # this shell (recc via reccStdenv, or anyone else) see the same PATH a
-    # real build would.
-    PATH="${PATH%:/no-such-path}"
+    # PATH sees two kinds of contamination in shell mode compared to a real
+    # sandboxed build: `nix develop`'s own from-scratch PATH build appends a
+    # "/no-such-path" sentinel, and — on some systems (e.g. NixOS, via
+    # /etc/bashrc -> /etc/profile, or a shell integration like direnv) —
+    # starting the interactive shell can append or prepend a whole system/user
+    # profile afterwards, which no snapshot taken here could reliably survive.
+    # Nothing done about PATH in this hook: reccStdenv's compiler wrapper
+    # filters $PATH down to /nix/store/* entries right before recc runs (every
+    # legitimate sandboxed $PATH entry already is one), which removes both
+    # kinds of contamination regardless of when or how they were added.
 
     _nixceptionLaunch
     disown "$_nixception_pid" 2>/dev/null || true
