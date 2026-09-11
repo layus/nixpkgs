@@ -104,6 +104,15 @@ let
     # sandboxed build's $PATH already consists of, so this is a no-op there.
     PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep '^/nix/store/' | paste -sd: -)"
 
+    # recc also always forwards LANG and LD_LIBRARY_PATH when they're set,
+    # independent of RECC_ENV_TO_READ/RECC_PRESERVE_ENV. A sandboxed build
+    # never has either (Nix's build sandbox doesn't set them), so they're
+    # absent from a real build's action. The same NixOS /etc/profile that
+    # contaminates PATH in an interactive nix-develop session also sets both
+    # — unset them so there's nothing for recc to pick up, matching what a
+    # real sandboxed build already has.
+    unset LANG LD_LIBRARY_PATH
+
     # RECC_PROJECT_ROOT is the top-level source dir: recc uploads every
     # input path inside it and reconstructs each remote output at
     #   RECC_PROJECT_ROOT / <action working_directory> / <output_path>.
