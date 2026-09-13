@@ -9,9 +9,9 @@ let
   src = fetchFromGitHub {
     owner = "layus";
     repo = "nixception";
-    rev = "v0.6.0";
+    rev = "v0.6.1";
     fetchSubmodules = true;
-    hash = "sha256-fgVq05EwkNztlONmVXImsJYk3ilCM/k/ODd0vYrT3VY=";
+    hash = "sha256-SUqZfiqNMNOnv1SUHaVpCayaPnukaW1JFRi4eEci/nY=";
   };
 
   # Nixception relies on a runner derivation that must be built from its own
@@ -28,10 +28,10 @@ let
 in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "nixception";
-  version = "0.6.0";
+  version = "0.6.1";
   __structuredAttrs = true;
   inherit src;
-  cargoHash = "sha256-tSqGOp6Exz/RmOVfnXBr4vEZDT4lR2AWUFhv6E6RZ3Q=";
+  cargoHash = "sha256-J54Gw2Kg/Ks+6UZczD00n50hd+S/p5oOTvZs7RvuQ88=";
 
   # Version override (no git repo).
   env.NIXCEPTION_VERSION = "v${finalAttrs.version}";
